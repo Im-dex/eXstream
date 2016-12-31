@@ -2,7 +2,9 @@
 
 #include "utility.hpp"
 
-namespace stream {
+namespace cppstream {
+
+constexpr size_t type_list_npos = size_t(-1);
 
 template <typename... Ts>
 struct type_list;
@@ -35,6 +37,36 @@ struct concat<type_list<Us...>, Ts...>
     using type = type_list<Ts..., Us...>;
 };
 
+template <typename T, typename... Ts>
+struct contains;
+
+template <typename T, typename H, typename... Ts>
+struct contains<T, H, Ts...>
+{
+    static constexpr bool value = std::is_same_v<T, H> && contains<T, Ts...>::value;
+};
+
+template <typename T>
+struct contains<T>
+{
+    static constexpr bool value = false;
+};
+
+template <size_t Index, typename T, typename... Ts>
+struct index_of;
+
+template <size_t Index, typename T, typename H, typename... Ts>
+struct index_of<Index, T, H, Ts...>
+{
+    static constexpr size_t value = std::is_same_v<T, H> ? Index : index_of<Index + 1, T, Ts...>::value;
+};
+
+template <size_t Index, typename T>
+struct index_of<Index, T>
+{
+    static constexpr size_t value = type_list_npos;
+};
+
 } // detail namespace
 
 template <typename Head, typename... Tail>
@@ -43,17 +75,19 @@ struct type_list<Head, Tail...> final
     using head = Head;
     using tail = type_list<Tail...>;
 
+    constexpr type_list() noexcept = default;
+
     static constexpr size_t size() noexcept
     {
         return sizeof...(Tail) + 1;
     }
 
-    static bool empty() noexcept
+    static constexpr bool empty() noexcept
     {
         return false;
     }
 
-    static bool non_empty() noexcept
+    static constexpr bool non_empty() noexcept
     {
         return true;
     }
@@ -66,6 +100,30 @@ struct type_list<Head, Tail...> final
 
     template <typename T>
     using push_back = type_list<Head, Tail..., T>;
+
+    template <typename T>
+    static constexpr bool contains() noexcept
+    {
+        return detail::contains<T, Head, Tail...>::value;
+    }
+
+    template <typename T>
+    static constexpr bool contains(type_t<T>) noexcept
+    {
+        return contains<T>();
+    }
+
+    template <typename T>
+    static constexpr size_t index_of() noexcept
+    {
+        return detail::index_of<T, Head, Tail...>::value;
+    }
+
+    template <typename T>
+    static constexpr size_t index_of(type_t<T>) noexcept
+    {
+        return index_of<T>();
+    }
 };
 
 template <>
@@ -73,17 +131,19 @@ struct type_list<> final
 {
     using tail = type_list<>;
 
+    constexpr type_list() noexcept = default;
+
     static constexpr size_t size() noexcept
     {
         return 0;
     }
 
-    static bool empty() noexcept
+    static constexpr bool empty() noexcept
     {
         return true;
     }
 
-    static bool non_empty() noexcept
+    static constexpr bool non_empty() noexcept
     {
         return false;
     }
@@ -96,6 +156,30 @@ struct type_list<> final
 
     template <typename T>
     using push_back = type_list<T>;
+
+    template <typename>
+    static constexpr bool contains() noexcept
+    {
+        return false;
+    }
+
+    template <typename T>
+    static constexpr bool contains(type_t<T>) noexcept
+    {
+        return false;
+    }
+
+    template <typename>
+    static constexpr size_t index_of() noexcept
+    {
+        return type_list_npos;
+    }
+
+    template <typename T>
+    static constexpr size_t index_of(type_t<T>) noexcept
+    {
+        return type_list_npos;
+    }
 };
 
-} // stream namespace
+} // cppstream namespace

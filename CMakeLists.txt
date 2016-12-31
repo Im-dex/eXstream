@@ -14,8 +14,10 @@ add_definitions(-DSTREAM_BUILD_DLL)
 
 file(GLOB HEADERS include/*.hpp)
 file(GLOB DETAIL_HEADERS include/detail/*.hpp)
+file(GLOB TRANSFORMATIONS_HEADERS include/transformations/*.hpp)
 source_group("include" FILES ${HEADERS})
 source_group("include\\detail" FILES ${DETAIL_HEADERS})
+source_group("include\\transformations" FILES ${TRANSFORMATIONS_HEADERS})
 
 file(GLOB SOURCES src/*.cpp src/*.hpp)
 source_group("src" FILES ${SOURCES})
@@ -27,7 +29,7 @@ if (MSVC)
     add_definitions(/Wall /wd4710 /wd4820 /wd4514 /wd4571)
 endif()
 
-add_library(${PROJECT} SHARED ${SOURCES} ${HEADERS} ${DETAIL_HEADERS})
+add_library(${PROJECT} SHARED ${SOURCES} ${HEADERS} ${DETAIL_HEADERS} ${TRANSFORMATIONS_HEADERS})
 
 if (test)
     include(ExternalProject)
@@ -43,7 +45,7 @@ if (test)
         ${GTEST_PROJECT}
         GIT_REPOSITORY "https://github.com/google/googletest.git"
         GIT_TAG "release-1.8.0"
-        CMAKE_ARGS -DBUILD_GTEST=ON -DBUILD_GMOCK=OFF -Dgtest_force_shared_crt=ON -DCMAKE_INSTALL_PREFIX:PATH=${gtest_INSTALL_DIR}
+        CMAKE_ARGS -DBUILD_GTEST=ON -DBUILD_GMOCK=ON -Dgtest_force_shared_crt=ON -DCMAKE_INSTALL_PREFIX:PATH=${gtest_INSTALL_DIR}
     )
 
     enable_testing()
@@ -55,7 +57,7 @@ if (test)
     ##############
     file(GLOB TEST_SOURCES test/*.cpp test/*.hpp)
     add_executable(${TEST_PROJECT} ${TEST_SOURCES})
-    target_link_libraries(${TEST_PROJECT} gtest.lib gtest_main.lib)
+    target_link_libraries(${TEST_PROJECT} gtest.lib gmock.lib gmock_main.lib)
 
     #target_link_libraries(${TEST_PROJECT} stream_lib)
 endif()

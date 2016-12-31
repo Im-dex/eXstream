@@ -1,91 +1,50 @@
 #pragma once
 
 #include "stream.hpp"
-#include "range_iterator.hpp"
-#include "detail/iterable_traits.hpp"
-#include "detail/range_traits.hpp"
+#include "detail/traits.hpp"
 
-namespace stream {
+namespace cppstream {
 namespace detail {
 
-template <typename T>
-constexpr bool is_range_source_v = !is_iterable_v<remove_cvr_t<T>> && is_range_v<remove_cvr_t<T>>;
-
-template <typename T>
-constexpr bool is_iterable_source_v = is_iterable_v<remove_cvr_t<T>>;
-
-template <typename T, bool IsRange, bool IsIterable>
-struct source_traits_impl
+template <typename Iterable, typename T>
+auto source(T&& iterable, std::true_type /*is_lvalue_reference*/)
 {
-    using stream_type = void;
+    using const_reference = const Iterable&;
+    const_reference ref = iterable;
 
-    static constexpr bool is_nothrow_constructible() noexcept
-    {
-        return false;
-    }
-};
-
-// range
-template <typename T>
-struct source_traits_impl<T, true, false>
-{
-    using traits = range_traits<T>;
-    using value_type = typename traits::value_type;
-    using iterator_type = const_range_iterator<value_type, typename traits::const_begin_iterator, typename traits::const_end_iterator>;
-    using stream_type = stream<value_type, iterator_type>;
-
-    static constexpr bool is_nothrow_constructible() noexcept
-    {
-        return std::is_nothrow_constructible_v<T, iterator_type&&>;
-    }
-};
-
-// iterable
-template <typename T>
-struct source_traits_impl<T, false, true>
-{
-    using traits = iterable_traits<T>;
-    using value_type = typename traits::value_type;
-    using iterator_type = typename traits::const_iterator;
-    using stream_type = stream<value_type, iterator_type>;
-
-    static constexpr bool is_nothrow_constructible() noexcept
-    {
-        return std::is_nothrow_constructible_v<T, const iterator_type&>;
-    }
-};
-
-// iterable
-template <typename T>
-struct source_traits_impl<T, true, true> : public source_traits_impl<T, false, true>
-{
-};
-
-template <typename T>
-using source_traits = source_traits_impl<remove_cvr_t<T>, is_range_source_v<T>, is_iterable_source_v<T>>;
-
-} // detail namespace
-
-template <typename T>
-std::enable_if_t<detail::is_range_source_v<T>, typename detail::source_traits<T>::stream_type>
-source(T&& streamable) noexcept(detail::source_traits<T>::is_nothrow_constructible())
-{
-    using traits = detail::source_traits<T>;
-    using stream_type = typename traits::stream_type;
-    using iterator = typename traits::iterator_type;
-
-    const auto& constStreamable = streamable;
-    return stream_type(iterator(constStreamable.begin(), constStreamable.end()));
+    using begin_iterator = decltype(ref.begin());
+    using end_iterator = decltype(ref.end());
+    using value_type = decltype(*std::declval<begin_iterator>());
+    
+    return stream<value_type, begin_iterator, end_iterator>(ref.begin(), ref.end());
 }
 
-template <typename T>
-std::enable_if_t<detail::is_iterable_source_v<T>, typename detail::source_traits<T>::stream_type>
-source(T&& streamable) noexcept(detail::source_traits<T>::is_nothrow_constructible())
+template <typename Iterable, typename T>
+auto source(T&& iterable, std::false_type /*is_lvalue_reference*/)
 {
-    using traits = detail::source_traits<T>;
-    using stream_type = typename traits::stream_type;
+    using begin_iterator = decltype(iterable.begin());
+    using end_iterator = decltype(iterable.end());
+    using value_type = decltype(*std::declval<begin_iterator>());
 
-    return stream_type(streamable.const_iterator());
+    return stream<value_type, begin_iterator, end_iterator>(iterable.begin(), iterable.end());
 }
 
-} // stream namespace
+} // detail namespasce
+
+template <typename T>
+auto source(T&& iterable)
+{
+    using iterable_type = remove_cvr_t<T>;
+
+    return CPPSTREAM_CONSTEXPR_IFELSE(is_iterable_v<iterable_type>,
+        noexcept {
+            return detail::source<iterable_type>(std::forward<T>(iterable), std::is_lvalue_reference<T>());
+        },
+        noexcept {
+            static_assert(false, "Source should meets 'Iterable' concept");
+            return error_t();
+        }
+    );
+}
+
+} // cppstream namespace

@@ -10,7 +10,7 @@ class set;
 
 } // std namespace
 
-namespace stream {
+namespace cppstream {
 
 template <typename T>
 struct ordering_traits final
@@ -30,4 +30,4 @@ struct ordering_traits<std::set<T, Compare, Alloc>>
     static constexpr bool is_ordered = true;
 };
 
-} // stream namespace
+} // cppstream namespace

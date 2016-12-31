@@ -2,11 +2,12 @@
 
 #include "detail/type_traits.hpp"
 
-STREAM_SUPRESS_ALL_WARNINGS
+CPPSTREAM_SUPPRESS_ALL_WARNINGS
 #include <functional>
-STREAM_RESTORE_ALL_WARNINGS
+CPPSTREAM_RESTORE_ALL_WARNINGS
 
-using namespace stream;
+using namespace cppstream;
+using namespace testing;
 
 #define TEST_CASE_NAME TraitsTest
 
@@ -55,56 +56,13 @@ TEST(TEST_CASE_NAME, is_nothrow_comparable_Test)
     EXPECT_FALSE(is_nothrow_comparable_v<non_comparable>);
 }
 
-TEST(TEST_CASE_NAME, has_operator_Test)
+TEST(TEST_CASE_NAME, sum_Test)
 {
-    struct empty {};
+    EXPECT_THAT((sum(0, 1, 5)), Eq(6));
+    EXPECT_THAT((sum(-4, 1, 2, -10)), Eq(-11));
 
-    struct type_with_const_operator
-    {
-        void operator* () const {}
-    };
-
-    struct type_with_operator
-    {
-        void operator* () {}
-        void operator++ () {}
-        void operator++ (int) {}
-    };
-
-    struct type_with_prefix_increment
-    {
-        void operator++() {}
-    };
-
-    // unary operator *
-    EXPECT_TRUE(has_unary_operator_asterisk_v<int*>);
-    EXPECT_TRUE(has_unary_operator_asterisk_v<type_with_operator>);
-    EXPECT_TRUE(has_unary_operator_asterisk_v<type_with_const_operator>);
-    EXPECT_FALSE(has_unary_operator_asterisk_v<int>);
-    EXPECT_FALSE(has_unary_operator_asterisk_v<empty>);
-
-    // prefix operator ++
-    EXPECT_TRUE(has_prefix_increment_operator_v<int>);
-    EXPECT_TRUE(has_prefix_increment_operator_v<int*>);
-    EXPECT_TRUE(has_prefix_increment_operator_v<type_with_operator>);
-    EXPECT_TRUE(has_prefix_increment_operator_v<type_with_prefix_increment>);
-    EXPECT_FALSE(has_prefix_increment_operator_v<empty>);
-
-    // postfix operator ++
-    EXPECT_TRUE(has_postfix_increment_operator_v<int>);
-    EXPECT_TRUE(has_postfix_increment_operator_v<int*>);
-    EXPECT_TRUE(has_postfix_increment_operator_v<type_with_operator>);
-    EXPECT_FALSE(has_postfix_increment_operator_v<type_with_prefix_increment>);
-    EXPECT_FALSE(has_postfix_increment_operator_v<empty>);
-}
-
-TEST(TEST_CASE_NAME, int_sum_Test)
-{
-    EXPECT_EQ((int_sum_v<int, 0, 1, 5>), 6);
-    EXPECT_EQ((int_sum_v<int, -4, 1, 2, -10>), -11);
-
-    EXPECT_EQ((int_sum_v<size_t, 4, 16>), 20);
-    EXPECT_EQ((int_sum_v<size_t, -2, 1>), std::numeric_limits<size_t>::max());
+    EXPECT_THAT((sum(4, size_t(16))), Eq(20));
+    EXPECT_THAT((sum(-2, size_t(1))), Eq(std::numeric_limits<size_t>::max()));
 
 }
 
@@ -164,7 +122,7 @@ TEST(TEST_CASE_NAME, is_invokable_Test)
     EXPECT_FALSE((is_invokable_v<decltype(StaticFunctionHolder::staticFunc), int>));
     EXPECT_FALSE((is_invokable_v<decltype(stdFunc), float, std::string>));
     EXPECT_FALSE((is_invokable_v<decltype(lambda), int*, double*>));
-    // NOTE: generic lambda accepts all types of arguments
+    // NOTE: generic lambda accepts any type of argument
 
     // incorrect arguments count
     EXPECT_FALSE((is_invokable_v<decltype(func), const float>));
@@ -174,7 +132,7 @@ TEST(TEST_CASE_NAME, is_invokable_Test)
     EXPECT_FALSE((is_invokable_v<decltype(genericLambda), int, float&, const double>));
 }
 
-STREAM_DEFINE_HAS_TYPE(value_type)
+CPPSTREAM_DEFINE_HAS_TYPE(value_type)
 
 TEST(TEST_CASE_NAME, has_type_Test)
 {
@@ -188,41 +146,16 @@ TEST(TEST_CASE_NAME, has_type_Test)
         using value_type = int;
     };
 
-    EXPECT_TRUE(has_value_type_type_v<std::string>);
-    EXPECT_TRUE(has_value_type_type_v<std::vector<int>::iterator>);
-    EXPECT_TRUE(has_value_type_type_v<HasValueType>);
-
-    EXPECT_FALSE(has_value_type_type_v<int>);
-    EXPECT_FALSE(has_value_type_type_v<NoValueType>);
-}
-
-TEST(TEST_CASE_NAME, result_of_Test)
-{
+    struct HasReferenceValueType
     {
-        using Result = result_of<decltype(func), float, int&>;
-        using BadResult = result_of<decltype(func), float>;
-        EXPECT_TYPES_EQ(Result, int);
-        EXPECT_TYPES_EQ(BadResult, error_t);
-    }
+        using value_type = int&;
+    };
 
-    {
-        using Result = result_of<decltype(StaticFunctionHolder::staticFunc), std::string>;
-        using BadResult = result_of<decltype(StaticFunctionHolder::staticFunc), int, std::string>;
-        EXPECT_TYPES_EQ(Result, void);
-        EXPECT_TYPES_EQ(BadResult, error_t);
-    }
+    EXPECT_TRUE(has_value_type<std::string>::value);
+    EXPECT_TRUE(has_value_type_v<std::vector<int>::iterator>);
+    EXPECT_TRUE(has_value_type<HasValueType>::value);
+    EXPECT_TRUE(has_value_type_v<HasReferenceValueType>);
 
-    {
-        using Result = result_of<decltype(lambda), int, double*>;
-        using BadResult = result_of<decltype(lambda), int, double*, char>;
-        EXPECT_TYPES_EQ(Result, int&);
-        EXPECT_TYPES_EQ(BadResult, error_t);
-    }
-
-    {
-        using Result = result_of<decltype(genericLambda), int, int>;
-        using BadResult = result_of<decltype(genericLambda), int>;
-        EXPECT_TYPES_EQ(Result, int&);
-        EXPECT_TYPES_EQ(BadResult, error_t);
-    }
+    EXPECT_FALSE(has_value_type<int>::value);
+    EXPECT_FALSE(has_value_type_v<NoValueType>);
 }

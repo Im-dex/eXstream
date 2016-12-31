@@ -2,7 +2,8 @@
 
 #include "detail/type_list.hpp"
 
-using namespace stream;
+using namespace cppstream;
+using namespace testing;
 
 #define TEST_CASE_NAME TypeListest
 
@@ -18,9 +19,9 @@ TEST(TEST_CASE_NAME, EmptyTest)
 
 TEST(TEST_CASE_NAME, SizeTest)
 {
-    EXPECT_EQ(type_list<>::size(), 0);
-    EXPECT_EQ(type_list<int>::size(), 1);
-    EXPECT_EQ((type_list<int, double, short>::size()), 3);
+    EXPECT_THAT(type_list<>::size(), Eq(0));
+    EXPECT_THAT(type_list<int>::size(), Eq(1));
+    EXPECT_THAT((type_list<int, double, short>::size()), Eq(3));
 }
 
 TEST(TEST_CASE_NAME, HeadTailTest)

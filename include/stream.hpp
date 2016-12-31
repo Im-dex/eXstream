@@ -1,55 +1,65 @@
 #pragma once
 
-#include "transformation.hpp"
+#include "transformations/mixins.hpp"
 
-namespace stream {
+namespace cppstream {
 
-template <typename T, typename Iterator>
-class stream final
+template <typename T,
+          typename BeginIter,
+          typename EndIter>
+class stream final : public with_map<T, stream<T, BeginIter, EndIter>>,
+                     public with_flat_map<T, stream<T, BeginIter, EndIter>>
 {
-    static_assert(is_iterator_v<Iterator>, "Illegal Iterator type");
 public:
 
-    explicit stream(const Iterator& iterator) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
-        : iterator(iterator)
+    explicit stream(const BeginIter& begin_, const EndIter& end_) noexcept(std::is_nothrow_copy_constructible_v<BeginIter> &&
+                                                                           std::is_nothrow_copy_constructible_v<EndIter>)
+        : begin_(begin_),
+          end_(end_)
     {
     }
 
-    explicit stream(Iterator&& iterator) noexcept(std::is_nothrow_move_constructible_v<Iterator>)
-        : iterator(std::move(iterator))
+    explicit stream(BeginIter&& begin_, EndIter&& end_) noexcept(std::is_nothrow_move_constructible_v<BeginIter> &&
+                                                                 std::is_nothrow_move_constructible_v<EndIter>)
+        : begin_(std::move(begin_)),
+          end_(std::move(end_))
     {
     }
 
-    stream(stream&& that) noexcept(std::is_nothrow_move_constructible_v<Iterator>) = default;
-    stream& operator= (stream&& that) noexcept(std::is_nothrow_move_assignable_v<Iterator>) = default; // TODO: delete
+    explicit stream(const BeginIter& begin_, EndIter&& end_) noexcept(std::is_nothrow_copy_constructible_v<BeginIter> &&
+                                                                      std::is_nothrow_move_constructible_v<EndIter>)
+        : begin_(begin_),
+          end_(std::move(end_))
+    {
+    }
+
+    explicit stream(BeginIter&& begin_, const EndIter& end_) noexcept(std::is_nothrow_move_constructible_v<BeginIter> &&
+                                                                      std::is_nothrow_copy_constructible_v<EndIter>)
+        : begin_(std::move(begin_)),
+          end_(end_)
+    {
+    }
 
     stream(const stream&) = delete;
     stream& operator= (const stream&) = delete;
 
-    ~stream() noexcept(std::is_nothrow_destructible_v<Iterator>) = default;
+    stream(stream&&) noexcept(std::is_nothrow_move_constructible_v<BeginIter> && std::is_nothrow_move_constructible_v<EndIter>) = default;
+    stream& operator= (stream&&) noexcept(std::is_nothrow_move_assignable_v<BeginIter> && std::is_nothrow_move_assignable_v<EndIter>) = default;
 
-    template <typename Function>
-    auto map(Function&& function) && noexcept(detail::map_traits<Iterator, Function>::is_nothrow_map())
+    BeginIter& begin() const noexcept
     {
-        return map(std::forward<Function>(function), is_invokable<Function, const T&>());
+        return begin_;
+    }
+
+    EndIter& end() const noexcept
+    {
+        return end_;
     }
 
 private:
 
-    template <typename Function>
-    auto map(Function&& function, std::true_type /* is_invokable */) noexcept(detail::map_traits<Iterator, Function>::is_nothrow_map())
-    {
-        using traits = detail::map_traits<Iterator, Function>;
-        return typename traits::result_transformation(std::move(iterator), std::forward<Function>(function));
-    }
-
-    template <typename MapFunction>
-    static void map(MapFunction&&, std::false_type /* is_invokable */) noexcept
-    {
-        static_assert(false_v<MapFunction>, "Invalid map function");
-    }
-
-    Iterator iterator;
+    BeginIter begin_;
+    EndIter end_;
 };
 
-} // stream namespace
+} // cppstream namespace

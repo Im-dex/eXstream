@@ -1,20 +1,23 @@
 #pragma once
 
 #include "config.hpp"
+// ReSharper disable once CppUnusedIncludeDirective
+#include "detail/preprocessor.hpp"
 
-STREAM_SUPRESS_ALL_WARNINGS
+CPPSTREAM_SUPPRESS_ALL_WARNINGS
 #include <gtest/gtest.h>
-STREAM_RESTORE_ALL_WARNINGS
+#include <gmock/gmock.h>
+CPPSTREAM_RESTORE_ALL_WARNINGS
 
 #define EXPECT_TYPES_EQ(T1, T2)\
-    EXPECT_PRED_FORMAT4((stream::is_types_eq<T1, T2>), Type<T1>(), Type<T2>(), STREAM_STRINGIZE(T1), STREAM_STRINGIZE(T2))
+    EXPECT_PRED_FORMAT4((::cppstream::is_types_eq<T1, T2>), Type<T1>(), Type<T2>(), CPPSTREAM_PP_STRINGIZE(T1), CPPSTREAM_PP_STRINGIZE(T2))
 
 #define EXPECT_TYPES_NE(T1, T2)\
-    EXPECT_PRED_FORMAT4((stream::is_types_ne<T1, T2>), Type<T1>(), Type<T2>(), STREAM_STRINGIZE(T1), STREAM_STRINGIZE(T2))
+    EXPECT_PRED_FORMAT4((::cppstream::is_types_ne<T1, T2>), Type<T1>(), Type<T2>(), CPPSTREAM_PP_STRINGIZE(T1), CPPSTREAM_PP_STRINGIZE(T2))
 
 #define EXPECT_ANY_DEATH(expression) EXPECT_DEATH(expression, ".*")
 
-namespace stream {
+namespace cppstream {
 
 template <typename T>
 class Type final
@@ -23,11 +26,7 @@ public:
 
     const char* name() const noexcept
     {
-#ifdef STREAM_MSVC
         return typeid(T).name();
-#else
-        return typeid(T).name();
-#endif
     }
 };
 
@@ -76,4 +75,4 @@ is_types_ne(const char*, const char*, const char*, const char*,
                                        << ySource << " = " << y;
 }
 
-} // stream namespace
+} // cppstream namespace
