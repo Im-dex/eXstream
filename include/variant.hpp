@@ -52,7 +52,7 @@ public:
     }
 
     template <typename T, typename... Args>
-    variant(in_place_type<T>, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+    variant(in_place_type_t<T>, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
         : index_(types::index_of(type<T>)),
           storage()
     {

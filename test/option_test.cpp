@@ -63,7 +63,7 @@ TEST(TEST_CASE_NAME, ConstructorTest)
     EXPECT_THAT(option<int>(value).get(), Eq(1));
     EXPECT_THAT(option<int>(some(1)).get(), Eq(1));
 
-    EXPECT_THAT(option<ComplexConstructible>(in_place(), 0, .0).get(), Eq(ComplexConstructible(0, .0)));
+    EXPECT_THAT(option<ComplexConstructible>(in_place, 0, .0).get(), Eq(ComplexConstructible(0, .0)));
     EXPECT_THAT(make_option<ComplexConstructible>(0, .0), Eq(ComplexConstructible(0, .0)));
 }
 

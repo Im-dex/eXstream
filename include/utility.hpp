@@ -2,18 +2,17 @@
 
 namespace cppstream {
 
-class in_place final {}; // TODO: constexpr constants
-class error_t final {};
-class empty final {};
+class in_place_t final {};
+constexpr const auto in_place = in_place_t();
 
 template <typename T>
-class in_place_type final {};
+class in_place_type_t final {};
 
-template <typename...>
-constexpr bool true_v = true;
+template <typename T>
+constexpr const auto in_place_type = in_place_type_t<T>();
 
-template <typename...>
-constexpr bool false_v = false;
+class nothing_t final {};
+constexpr const auto nothing = nothing_t();
 
 template <typename T>
 struct type_t final
@@ -22,6 +21,6 @@ struct type_t final
 };
 
 template <typename T>
-constexpr type_t<T> type = type_t<T>();
+constexpr const auto type = type_t<T>();
 
 } // cppstream namespace

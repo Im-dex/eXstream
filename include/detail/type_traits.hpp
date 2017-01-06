@@ -1,30 +1,20 @@
 #pragma once
 
-#include "utility.hpp"
 #include "constexpr_if.hpp"
 
 CPPSTREAM_SUPPRESS_ALL_WARNINGS
 #include <limits>
 CPPSTREAM_RESTORE_ALL_WARNINGS
 
-#define CPPSTREAM_DEFINE_HAS_TYPE(typeName)\
-    template <typename T>\
-    struct stream_detail_has_ ## typeName\
-    {\
-        template <typename U>\
-        static auto check() -> decltype(std::declval<typename U::typeName>(), std::true_type());\
-        \
-        template <typename>\
-        static std::false_type check(...);\
-        \
-        using result = decltype(check<T>());\
-    };\
+#define CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(typeName)\
+    template <typename T, typename U = std::void_t<>>\
+    struct has_ ## typeName ## _member : public std::false_type {};\
     \
     template <typename T>\
-    using has_ ## typeName = typename stream_detail_has_ ## typeName<T>::result;\
+    struct has_ ## typeName ## _member<T, std::void_t<typename T::typeName>> : public std::true_type {};\
     \
     template <typename T>\
-    constexpr bool has_ ## typeName ## _v = has_ ## typeName<T>::value;
+    constexpr bool has_ ## typeName ## _member_v = has_ ## typeName ## _member<T>::value;
 
 namespace std {
 
@@ -72,23 +62,11 @@ using remove_cvr = std::remove_cv<std::remove_reference_t<T>>;
 template <typename T>
 using remove_cvr_t = typename remove_cvr<T>::type;
 
-namespace detail {
+template <typename T, typename U, typename R = std::void_t<>>
+struct is_comparable_to : public std::false_type {};
 
 template <typename T, typename U>
-struct is_comparable_to final
-{
-    template <typename A, typename B>
-    static auto check(A&& a, B&& b) -> decltype(a == b, std::true_type{});
-
-    static std::false_type check(...);
-
-    using result = decltype(check(std::declval<T>(), std::declval<U>()));
-};
-
-} // detail namespace
-
-template <typename T, typename U>
-using is_comparable_to = typename detail::is_comparable_to<T, U>::result;
+struct is_comparable_to<T, U, std::void_t<decltype(std::declval<T>() == std::declval<U>())>> : public std::true_type {};
 
 template <typename T, typename U>
 constexpr bool is_comparable_to_v = is_comparable_to<T, U>::value;
@@ -99,23 +77,11 @@ using is_comparable = is_comparable_to<T, T>;
 template <typename T>
 constexpr bool is_comparable_v = is_comparable<T>::value;
 
-namespace detail {
+template <typename T, typename U, bool R = is_comparable_to_v<T, U>>
+struct is_nothrow_comparable_to : public std::false_type {};
 
 template <typename T, typename U>
-struct is_nothrow_comparable_to final
-{
-    template <typename A, typename B>
-    static auto check(A&& a, B&& b) -> decltype(std::bool_constant<noexcept(a == b)>{});
-
-    static std::false_type check(...);
-
-    using result = decltype(check(std::declval<T>(), std::declval<U>()));
-};
-
-} // detail namespace
-
-template <typename T, typename U>
-using is_nothrow_comparable_to = typename detail::is_nothrow_comparable_to<T, U>::result;
+struct is_nothrow_comparable_to<T, U, true> : public std::bool_constant<noexcept(std::declval<T>() == std::declval<U>())> {};
 
 template <typename T, typename U>
 constexpr bool is_nothrow_comparable_to_v = is_nothrow_comparable_to<T, U>::value;
@@ -129,22 +95,29 @@ constexpr bool is_nothrow_comparable_v = is_nothrow_comparable<T>::value;
 template <typename T>
 constexpr bool is_integer_v = std::numeric_limits<T>::is_integer;
 
-template <typename T>
-using is_integer = std::bool_constant<is_integer_v<T>>;
-
 template <typename IntType, typename... Ints>
 constexpr auto sum(IntType value, Ints... tail) noexcept
 {
     static_assert(is_integer_v<IntType>, "IntType should be integer type");
 
-    return CPPSTREAM_CONSTEXPR_IFELSE(sizeof...(Ints) > 0,
-        noexcept {
+#ifndef CPPSTREAM_MSVC
+    // NOTE: MSVC 2015 error: expected constant expression
+    static_assert(std::conjunction_v<is_integer<Ints>...>, "All of Ints types should be integer");
+#endif
+
+    CPPSTREAM_MSVC_SUPPRESS_WARNINGS_PUSH(4296)
+
+    return constexpr_if<(sizeof...(Ints) > 0)>()
+        .then([&](auto) noexcept
+        {
             return value + sum(tail...);
-        },
-        noexcept {
+        })
+        .else_([&](auto) noexcept
+        {
             return value;
-        }
-    );
+        })(nothing);
+
+    CPPSTREAM_MSVC_WARNINGS_POP
 }
 
 namespace detail {

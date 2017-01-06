@@ -1,5 +1,6 @@
 #pragma once
 
+#include "detail/bool_c.hpp"
 #include "utility.hpp"
 
 namespace cppstream {

@@ -10,22 +10,22 @@ CPPSTREAM_RESTORE_ALL_WARNINGS
 namespace cppstream {
 namespace detail {
 
-CPPSTREAM_DEFINE_HAS_TYPE(difference_type)
-CPPSTREAM_DEFINE_HAS_TYPE(value_type)
-CPPSTREAM_DEFINE_HAS_TYPE(pointer)
-CPPSTREAM_DEFINE_HAS_TYPE(reference)
-CPPSTREAM_DEFINE_HAS_TYPE(iterator_category)
+CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(difference_type)
+CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(value_type)
+CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(pointer)
+CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(reference)
+CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(iterator_category)
 
 template <typename T>
 struct is_iterator
 {
     using traits = std::iterator_traits<T>;
     using result = std::conjunction<
-        has_difference_type<traits>,
-        has_value_type<traits>,
-        has_pointer<traits>,
-        has_reference<traits>,
-        has_iterator_category<traits>
+        has_difference_type_member<traits>,
+        has_value_type_member<traits>,
+        has_pointer_member<traits>,
+        has_reference_member<traits>,
+        has_iterator_category_member<traits>
     >;
 };
 
@@ -104,8 +104,8 @@ struct is_iterable
 template <typename T>
 struct is_reverse_iterable
 {
-    template <typename U>
-    static auto check(U& x, const U& y) -> decltype(std::conjunction<
+    template <typename U1, typename U2>
+    static auto check(U1& x, const U2& y) -> decltype(std::conjunction<
         cppstream::is_forward_iterator<decltype(x.rbegin())>,
         cppstream::is_forward_iterator<decltype(x.rend())>,
         cppstream::is_forward_iterator<decltype(y.rbegin())>,
@@ -114,7 +114,7 @@ struct is_reverse_iterable
 
     static std::false_type check(...);
 
-    using result = decltype(check(std::declval<T>(), std::declval<T>()));
+    using result = decltype(check(std::declval<T&>(), std::declval<const T&>()));
 };
 
 } // detail namespace
@@ -131,37 +131,11 @@ using is_reverse_iterable = typename detail::is_reverse_iterable<T>::result;
 template <typename T>
 constexpr bool is_reverse_iterable_v = is_reverse_iterable<T>::value;
 
-namespace detail {
-
-template <bool Valid, typename T>
-struct is_sizable_check_result
-{
-    using type = std::false_type;
-};
+template <typename T, typename R = std::void_t<>>
+struct is_sizable : public std::false_type {};
 
 template <typename T>
-struct is_sizable_check_result<true, T>
-{
-    using type = std::bool_constant<std::numeric_limits<decltype(std::declval<T>().size())>::is_integer>;
-};
-
-template <typename T>
-struct is_sizable
-{
-    template <typename U>
-    static auto check(U&& value) -> decltype(value.size(), std::true_type{});
-
-    static std::false_type check(...);
-
-    using has_method = decltype(check(std::declval<T>()));
-
-    using result = typename is_sizable_check_result<has_method::value, T>::type;
-};
-
-} // detail namespace
-
-template <typename T>
-using is_sizable = typename detail::is_sizable<T>::result;
+struct is_sizable<T, std::void_t<decltype(std::declval<const T>().size())>> : public std::bool_constant<std::numeric_limits<decltype(std::declval<const T>().size())>::is_integer> {};
 
 template <typename T>
 constexpr bool is_sizable_v = is_sizable<T>::value;

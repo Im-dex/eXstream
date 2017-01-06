@@ -63,7 +63,6 @@ TEST(TEST_CASE_NAME, sum_Test)
 
     EXPECT_THAT((sum(4, size_t(16))), Eq(20));
     EXPECT_THAT((sum(-2, size_t(1))), Eq(std::numeric_limits<size_t>::max()));
-
 }
 
 int func(const float, int&) { return 0; }
@@ -132,7 +131,7 @@ TEST(TEST_CASE_NAME, is_invokable_Test)
     EXPECT_FALSE((is_invokable_v<decltype(genericLambda), int, float&, const double>));
 }
 
-CPPSTREAM_DEFINE_HAS_TYPE(value_type)
+CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(value_type)
 
 TEST(TEST_CASE_NAME, has_type_Test)
 {
@@ -151,11 +150,11 @@ TEST(TEST_CASE_NAME, has_type_Test)
         using value_type = int&;
     };
 
-    EXPECT_TRUE(has_value_type<std::string>::value);
-    EXPECT_TRUE(has_value_type_v<std::vector<int>::iterator>);
-    EXPECT_TRUE(has_value_type<HasValueType>::value);
-    EXPECT_TRUE(has_value_type_v<HasReferenceValueType>);
+    EXPECT_TRUE(has_value_type_member<std::string>::value);
+    EXPECT_TRUE(has_value_type_member_v<std::vector<int>::iterator>);
+    EXPECT_TRUE(has_value_type_member<HasValueType>::value);
+    EXPECT_TRUE(has_value_type_member_v<HasReferenceValueType>);
 
-    EXPECT_FALSE(has_value_type<int>::value);
-    EXPECT_FALSE(has_value_type_v<NoValueType>);
+    EXPECT_FALSE(has_value_type_member<int>::value);
+    EXPECT_FALSE(has_value_type_member_v<NoValueType>);
 }

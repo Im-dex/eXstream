@@ -30,8 +30,8 @@ TEST(TEST_CASE_NAME, is_sizable_Test)
     EXPECT_TRUE(is_sizable_v<std::string>);
     EXPECT_TRUE(is_sizable_v<std::vector<int>>);
     EXPECT_TRUE(is_sizable_v<Sizable>);
-    EXPECT_TRUE(is_sizable_v<NonConstSizable>);
 
+    EXPECT_FALSE(is_sizable_v<NonConstSizable>);
     EXPECT_FALSE(is_sizable_v<int>);
     EXPECT_FALSE(is_sizable_v<NonIntegerSizable>);
 }
@@ -40,7 +40,7 @@ struct MyOrdered
 {
 };
 
-namespace stream {
+namespace cppstream {
 
 template <>
 struct ordering_traits<MyOrdered>
@@ -48,7 +48,7 @@ struct ordering_traits<MyOrdered>
     static constexpr bool is_ordered = true;
 };
 
-} // stream namespace
+} // cppstream namespace
 
 TEST(TEST_CASE_NAME, is_ordered_Test)
 {

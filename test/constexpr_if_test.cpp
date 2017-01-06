@@ -32,25 +32,25 @@ TEST(TEST_CASE_NAME, ConstexprIf)
     EXPECT_CALL(successCallChecker, called()).Times(testing::Exactly(1));
     EXPECT_CALL(failureCallChecker, called()).Times(testing::Exactly(0));
 
-    CPPSTREAM_CONSTEXPR_IF(is_comparable_v<comparable>,
-        noexcept {
+    constexpr_if<is_comparable_v<comparable>>()
+        .then([&](auto) noexcept
+        {
             comparable() == comparable();
             successCallChecker.called();
-        }
-    );
+        })(nothing);
 
-    CPPSTREAM_CONSTEXPR_IF(is_comparable_v<non_comparable>,
-        noexcept {
+    constexpr_if<is_comparable_v<non_comparable>>()
+        .then([&](auto) noexcept
+        {
             non_comparable() == non_comparable();
             failureCallChecker.called();
-        }
-    );
+        })(nothing);
 
-    CPPSTREAM_CONSTEXPR_IF(false,
-        noexcept {
+    constexpr_if<false>()
+        .then([](auto) noexcept
+        {
             static_assert(false, "Test failed");
-        }
-    );
+        })(nothing);
 }
 
 TEST(TEST_CASE_NAME, ConstexprIfElse)
@@ -60,61 +60,71 @@ TEST(TEST_CASE_NAME, ConstexprIfElse)
     EXPECT_CALL(successCallChecker, called()).Times(testing::Exactly(1));
     EXPECT_CALL(failureCallChecker, called()).Times(testing::Exactly(0));
 
-    CPPSTREAM_CONSTEXPR_IFELSE(is_comparable_v<comparable>,
-        noexcept {
+    constexpr_if<is_comparable_v<comparable>>()
+        .then([&](auto) noexcept
+        {
             comparable() == comparable();
             successCallChecker.called();
-        },
-        noexcept {
+        })
+        .else_([&](auto) noexcept
+        {
             non_comparable() == non_comparable();
             failureCallChecker.called();
-        }
-    );
+        })(nothing);
 
-    CPPSTREAM_CONSTEXPR_IFELSE(true,
-        noexcept {
+    constexpr_if<true>()
+        .then([](auto) noexcept
+        {
             static_assert(true, "Test success");
-        },
-        noexcept {
+        })
+        .else_([](auto) noexcept
+        {
             static_assert(false, "Test failed");
-        }
-    );
+        })(nothing);
 
-    const auto result = CPPSTREAM_CONSTEXPR_IFELSE(true,
-        noexcept {
+    const auto result = constexpr_if<false>()
+        .then([](auto) noexcept
+        {
             return 0;
-        },
-        noexcept {
-            return 1;
-        }
-    );
+        })
+        .else_if<true>()
+            .then([](auto) noexcept
+            {
+                return 1;
+            })
+            .else_([](auto) noexcept
+            {
+                return 2;
+            })(nothing);
 
-    EXPECT_THAT(result, testing::Eq(0));
+    EXPECT_THAT(result, testing::Eq(1));
 }
 
-TEST(TEST_CASE_NAME, ConstexprIfElseTypeInference)
+TEST(TEST_CASE_NAME, ConstexprIfTypeInference)
 {
-    auto result1 = CPPSTREAM_CONSTEXPR_IFELSE(true,
-        noexcept {
+    auto result1 = constexpr_if<true>()
+        .then([](auto) noexcept
+        {
             return 1;
-        },
-        noexcept {
+        })
+        .else_([](auto) noexcept
+        {
             return 0.f;
-        }
-    );
+        })(nothing);
 
-    auto result2 = CPPSTREAM_CONSTEXPR_IFELSE(false,
-        noexcept {
+    auto result2 = constexpr_if<false>()
+        .then([](auto) noexcept
+        {
             return 1;
-        },
-        noexcept {
+        })
+        .else_([](auto) noexcept
+        {
             return 0.f;
-        }
-    );
+        })(nothing);
 
     EXPECT_TYPES_EQ(decltype(result1), int);
     EXPECT_TYPES_EQ(decltype(result2), float);
 
-    CPPSTREAM_UNUSED(result1);
-    CPPSTREAM_UNUSED(result2);
+    EXPECT_THAT(result1, testing::Eq(1));
+    EXPECT_THAT(result2, testing::Eq(0.f));
 }

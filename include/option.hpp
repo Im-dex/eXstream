@@ -3,7 +3,6 @@
 #include "utility.hpp"
 #include "ordering_traits.hpp"
 #include "detail/type_traits.hpp"
-#include "detail/type_list.hpp"
 #include "not_null.hpp"
 
 CPPSTREAM_SUPPRESS_ALL_WARNINGS
@@ -19,14 +18,10 @@ class option;
 struct none_t final {};
 
 template <typename T>
-struct is_option : public std::false_type
-{
-};
+struct is_option : public std::false_type {};
 
 template <typename T>
-struct is_option<option<T>> : public std::true_type
-{
-};
+struct is_option<option<T>> : public std::true_type {};
 
 template <typename T>
 constexpr bool is_option_v = is_option<T>::value;
@@ -167,88 +162,81 @@ public:
         : storage(),
           emptyFlag(false)
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_copy_constructible_v<T>,
-            noexcept(std::is_nothrow_copy_constructible_v<T>) {
+        constexpr_if<std::is_copy_constructible_v<T>>()
+            .then([&](auto) noexcept(std::is_nothrow_copy_constructible_v<T>)
+            {
                 construct(that);
-            },
-            noexcept {
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Optional type should be copy constructible");
-            }
-        );
+            })(nothing);
     }
     
     explicit option(T&& that) noexcept(std::is_nothrow_move_constructible_v<T>)
         : storage(),
           emptyFlag(false)
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_move_constructible_v<T>,
-            noexcept(std::is_nothrow_move_constructible_v<T>) {
+        constexpr_if<std::is_move_constructible_v<T>>()
+            .then([&](auto) noexcept(std::is_nothrow_move_constructible_v<T>)
+            {
                 construct(std::move(that));
-            },
-            noexcept {
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Optional type should be move constructible");
-            }
-        );
+            })(nothing);
     }
     
     option(const option& that) noexcept(std::is_nothrow_copy_constructible_v<T>)
         : storage(),
           emptyFlag(that.emptyFlag)
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_copy_constructible_v<T>,
-            noexcept(std::is_nothrow_copy_constructible_v<T>) {
+        constexpr_if<std::is_copy_constructible_v<T>>()
+            .then([&](auto) noexcept(std::is_nothrow_copy_constructible_v<T>)
+            {
                 if (that.non_empty()) construct(that.value());
-            },
-            noexcept {
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Optional type should be copy constructible");
-            }
-        );
+            })(nothing);
     }
     
     option(option&& that) noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_destructible_v<T>)
         : storage(),
           emptyFlag(that.emptyFlag)
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_move_constructible_v<T>,
-            noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_destructible_v<T>) {
+        constexpr_if<std::is_move_constructible_v<T>>()
+            .then([&](auto) noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_destructible_v<T>)
+            {
                 if (that.non_empty())
                 {
                     construct(std::move(that).value());
                     that.destroy();
                     that.emptyFlag = true;
                 }
-            },
-            noexcept {
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Optional type should be move constructible");
-            }
-        );
+            })(nothing);
     }
     
     template <typename... Args>
-    explicit option(const in_place&, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+    explicit option(in_place_t, Args&&... arguments) noexcept(std::is_nothrow_constructible_v<T, Args...>)
         : storage(),
           emptyFlag(false)
     {
-        // NOTE: workaround for msvc
-        using types = type_list<Args...>;
-
-// NOTE: msvc 2015-2017RC can't access both Ts... and Arg in noexcept declaration
-#ifdef CPPSTREAM_MSVC
-#   define CPPSTREAM_MSVC_NOEXCEPT_WORKAROUND
-#else
-#   define CPPSTREAM_MSVC_NOEXCEPT_WORKAROUND noexcept(std::is_nothrow_constructible_v<T, Ts...>)
-#endif
-
-        CPPSTREAM_CONSTEXPR_IFELSE((std::is_constructible_v<T, Args...>),
-            CPPSTREAM_MSVC_NOEXCEPT_WORKAROUND {
-                construct(types(), args...);
-            },
-            noexcept {
+        constexpr_if<std::is_constructible_v<T, Args...>>()
+            .then([this](auto&&... args) noexcept(std::is_nothrow_constructible_v<T, decltype(args)...>)
+            {
+                construct(std::forward<decltype(args)>(args)...);
+            })
+            .else_([](auto...) noexcept
+            {
                 static_assert(false, "Optional type should be constructible from 'Ts&&...'");
-            }
-        );
-
-#undef CPPSTREAM_MSVC_NOEXCEPT_WORKAROUND
+            })(std::forward<Args>(arguments)...);
     }
     
     ~option() noexcept(std::is_nothrow_destructible_v<T>)
@@ -266,10 +254,10 @@ public:
                                                     std::is_nothrow_copy_constructible_v<T> &&
                                                     std::is_nothrow_destructible_v<T>)
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>,
-            noexcept(std::is_nothrow_copy_assignable_v<T>    &&
-                     std::is_nothrow_copy_constructible_v<T> &&
-                     std::is_nothrow_destructible_v<T>)
+        constexpr_if<std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>>()
+            .then([&](auto) noexcept(std::is_nothrow_copy_assignable_v<T>    &&
+                                     std::is_nothrow_copy_constructible_v<T> &&
+                                     std::is_nothrow_destructible_v<T>)
             {
                 if (!(empty() && that.empty()))
                 {
@@ -277,13 +265,12 @@ public:
                     else if (empty() && that.non_empty())  initialize(that.value());
                     else                                   reset();
                 }
-            },
-            noexcept
+            })
+            .else_([](auto) noexcept
             {
                 static_assert(false, "Optional type should be copy constructible and copy assignable");
-            }
-        );
-    
+            })(nothing);
+
         return *this;
     }
 
@@ -291,10 +278,10 @@ public:
                                                std::is_nothrow_move_constructible_v<T> &&
                                                std::is_nothrow_destructible_v<T>)
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_move_constructible_v<T> && std::is_move_assignable_v<T>,
-            noexcept(std::is_nothrow_move_assignable_v<T>    &&
-                     std::is_nothrow_move_constructible_v<T> &&
-                     std::is_nothrow_destructible_v<T>)
+        constexpr_if<std::is_move_constructible_v<T> && std::is_move_assignable_v<T>>()
+            .then([&](auto) noexcept(std::is_nothrow_move_assignable_v<T>    &&
+                                     std::is_nothrow_move_constructible_v<T> &&
+                                     std::is_nothrow_destructible_v<T>)
             {
                 if (!(empty() && that.empty()))
                 {
@@ -302,48 +289,43 @@ public:
                     else if (empty() && that.non_empty())  initialize(std::move(that).value());
                     else                                   reset();
                 }
-            },
-            noexcept
+            })
+            .else_([](auto) noexcept
             {
                 static_assert(false, "Optional type should be move constructible and move assignable");
-            }
-        );
+            })(nothing);
 
         return *this;
     }
 
     option& operator= (const T& that) noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>)
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>,
-            noexcept(std::is_nothrow_copy_assignable_v<T> &&
-                     std::is_nothrow_copy_constructible_v<T>)
+        constexpr_if<std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>>()
+            .then([&](auto) noexcept(std::is_nothrow_copy_assignable_v<T> &&
+                                     std::is_nothrow_copy_constructible_v<T>)
             {
-                if (empty()) initialize(that);
-                else         assign(that);
-            },
-            noexcept
+                if (empty()) initialize(that); else assign(that);
+            })
+            .else_([](auto) noexcept
             {
                 static_assert(false, "Optional type should be copy constructible and copy assignable");
-            }
-        );
+            })(nothing);
     
         return *this;
     }
     
     option& operator= (T&& that) noexcept(std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>)
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_move_constructible_v<T> && std::is_move_assignable_v<T>,
-            noexcept(std::is_nothrow_move_assignable_v<T> &&
-                     std::is_nothrow_move_constructible_v<T>)
+        constexpr_if<std::is_move_constructible_v<T> && std::is_move_assignable_v<T>>()
+            .then([&](auto) noexcept(std::is_nothrow_move_assignable_v<T> &&
+                                     std::is_nothrow_move_constructible_v<T>)
             {
-                if (empty()) initialize(std::move(that));
-                else         assign(std::move(that));
-            },
-            noexcept
+                if (empty()) initialize(std::move(that)); else assign(std::move(that));
+            })
+            .else_([](auto) noexcept
             {
                 static_assert(false, "Optional type should be move constructible and move assignable");
-            }
-        );
+            })(nothing);
     
         return *this;
     }
@@ -369,15 +351,16 @@ public:
     
     bool operator== (const option& that) const noexcept(is_nothrow_comparable_v<const T>)
     {
-        return CPPSTREAM_CONSTEXPR_IFELSE(is_comparable_v<const T>,
-            noexcept(is_nothrow_comparable_v<const T>) {
+        return constexpr_if<is_nothrow_comparable_v<const T>>()
+            .then([&](auto) noexcept(is_nothrow_comparable_v<const T>)
+            {
                 return (empty() == that.empty()) && (empty() ? true : (value() == that.value()));
-            },
-            noexcept {
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Optional type should be comparable");
                 return false;
-            }
-        );
+            })(nothing);
     }
     
     bool operator!= (const option& that) const noexcept(is_nothrow_comparable_v<const T>)
@@ -387,15 +370,16 @@ public:
     
     bool operator== (const T& that) const noexcept(is_nothrow_comparable_v<const T>)
     {
-        return CPPSTREAM_CONSTEXPR_IFELSE(is_comparable_v<const T>,
-            noexcept(is_nothrow_comparable_v<const T>) {
+        return constexpr_if<is_comparable_v<const T>>()
+            .then([&](auto) noexcept(is_nothrow_comparable_v<const T>)
+            {
                 return empty() ? false : value() == that;
-            },
-            noexcept {
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Optional type should be comparable");
                 return true;
-            }
-        );
+            })(nothing);
     }
     
     bool operator!= (const T& that) const noexcept(is_nothrow_comparable_v<const T>)
@@ -447,14 +431,15 @@ public:
     template <typename E>
     const T& get_or_throw() const &
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_default_constructible_v<E>,
+        constexpr_if<std::is_default_constructible_v<E>>()
+            .then([&](auto)
             {
-                if (empty()) throw E{};
-            },
-            noexcept {
+                if (empty()) throw E();
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Exception type should be default constructible");
-            }
-        );
+            })(nothing);
     
         return value();
     }
@@ -462,14 +447,15 @@ public:
     template <typename E>
     T& get_or_throw() &
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_default_constructible_v<E>,
+        constexpr_if<std::is_default_constructible_v<E>>()
+            .then([&](auto)
             {
-                if (empty()) throw E{};
-            },
-            noexcept {
+                if (empty()) throw E();
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Exception type should be default constructible");
-            }
-        );
+            })(nothing);
     
         return value();
     }
@@ -477,14 +463,15 @@ public:
     template <typename E>
     T get_or_throw() &&
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_default_constructible_v<E>,
+        constexpr_if<std::is_default_constructible_v<E>>()
+            .then([&](auto)
             {
-                if (empty()) throw E{};
-            },
-            noexcept {
+                if (empty()) throw E();
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Exception type should be default constructible");
-            }
-        );
+            })(nothing);
     
         return std::move(value());
     }
@@ -514,10 +501,10 @@ public:
                                      std::is_nothrow_move_constructible_v<T> &&
                                      std::is_nothrow_destructible_v<T>)
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_swappable_v<T&> && std::is_move_constructible_v<T>,
-            noexcept(std::is_nothrow_swappable_v<T&>         &&
-                     std::is_nothrow_move_constructible_v<T> &&
-                     std::is_nothrow_destructible_v<T>)
+        constexpr_if<std::is_swappable_v<T&> && std::is_move_constructible_v<T>>()
+            .then([&](auto) noexcept(std::is_nothrow_swappable_v<T&>         &&
+                                     std::is_nothrow_move_constructible_v<T> &&
+                                     std::is_nothrow_destructible_v<T>)
             {
                 using std::swap;
 
@@ -535,30 +522,27 @@ public:
                         reset();
                     }
                 }
-            },
-            noexcept
+            })
+            .else_([](auto) noexcept
             {
                 static_assert(false, "Optional type should be swapable and move constructible");
-            }
-        );
+            })(nothing);
     }
 
     void swap(T& that) noexcept(std::is_nothrow_swappable_v<T&> && std::is_nothrow_move_constructible_v<T>)
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_swappable_v<T&> && std::is_move_constructible_v<T>,
-            noexcept(std::is_nothrow_swappable_v<T&> &&
-                std::is_nothrow_move_constructible_v<T>)
+        constexpr_if<std::is_swappable_v<T&> && std::is_move_constructible_v<T>>()
+            .then([&](auto) noexcept(std::is_nothrow_swappable_v<T&> &&
+                                     std::is_nothrow_move_constructible_v<T>)
             {
                 using std::swap;
     
-                if (empty()) initialize(std::move(that));
-                else         swap(value(), that);
-            },
-            noexcept
+                if (empty()) initialize(std::move(that)); else swap(value(), that);
+            })
+            .else_([](auto) noexcept
             {
                 static_assert(false, "Optional type should be swapable and move constructible");
-            }
-        );
+            })(nothing);
     }
     
     explicit operator bool() const noexcept
@@ -669,12 +653,6 @@ private:
     void construct(Ts&&... args) noexcept(std::is_nothrow_constructible_v<T, Ts...>)
     {
         new (pointer()) T(std::forward<Ts>(args)...);
-    }
-
-    template <typename... Ts, typename... Us>
-    void construct(const type_list<Ts...>, Us&... args) noexcept(std::is_nothrow_constructible_v<T, Ts...>)
-    {
-        construct(std::forward<Ts>(args)...);
     }
     
     template <typename... Ts>
@@ -797,14 +775,15 @@ public:
     template <typename E>
     value_type get_or_throw()
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_default_constructible_v<E>,
+        constexpr_if<std::is_default_constructible_v<E>>()
+            .then([&](auto)
             {
-                if (empty) throw E{};
-            },
-            noexcept {
+                if (is_empty()) throw E{};
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "E should be default constructible");
-            }
-        );
+            })(nothing);
 
         return pointer;
     }
@@ -812,14 +791,15 @@ public:
     template <typename E>
     const_value_type get_or_throw() const
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_default_constructible_v<E>,
+        constexpr_if<std::is_default_constructible_v<E>>()
+            .then([&](auto)
             {
-                if (empty) throw E{};
-            },
-            noexcept {
+                if (is_empty()) throw E{};
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "E should be default constructible");
-            }
-        );
+            })(nothing);
 
         return pointer;
     }
@@ -989,15 +969,16 @@ public:
 
     bool operator== (const option& that) const noexcept(is_nothrow_comparable_v<T>)
     {
-        return CPPSTREAM_CONSTEXPR_IFELSE(is_comparable_v<T>,
-            noexcept(is_nothrow_comparable_v<T>) {
+        return constexpr_if<is_comparable_v<T>>()
+            .then([&](auto) noexcept(is_nothrow_comparable_v<T>)
+            {
                 return non_empty() && that.non_empty() && (reference() == that.reference());
-            },
-            noexcept {
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Optional type should be comparable");
                 return false;
-            }
-        );
+            })(nothing);
     }
 
     bool operator!= (const option& that) const noexcept(is_nothrow_comparable_v<T>)
@@ -1007,15 +988,16 @@ public:
 
     bool operator== (const T& that) noexcept(is_nothrow_comparable_v<T>)
     {
-        return CPPSTREAM_CONSTEXPR_IFELSE(is_comparable_v<T>,
-            noexcept(is_nothrow_comparable_v<T>) {
+        return constexpr_if<is_comparable_v<T>>()
+            .then([&](auto) noexcept(is_nothrow_comparable_v<T>)
+            {
                 return non_empty() && (reference() == that);
-            },
-            noexcept {
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Optional type should be comparable");
                 return false;
-            }
-        );
+            })(nothing);
     }
 
     bool operator!= (const T& that) const noexcept(is_nothrow_comparable_v<T>)
@@ -1063,14 +1045,15 @@ public:
     template <typename E>
     value_type get_or_throw()
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_default_constructible_v<E>,
+        constexpr_if<std::is_default_constructible_v<E>>()
+            .then([&](auto)
             {
-                if (empty) throw E{};
-            },
-            noexcept {
+                if (empty) throw E();
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "E should be default constructible");
-            }
-        );
+            })(nothing);
 
         return reference();
     }
@@ -1078,14 +1061,15 @@ public:
     template <typename E>
     const_value_type get_or_throw() const
     {
-        CPPSTREAM_CONSTEXPR_IFELSE(std::is_default_constructible_v<E>,
+        constexpr_if<std::is_default_constructible_v<E>>()
+            .then([&](auto)
             {
-                if (empty) throw E{};
-            },
-            noexcept{
+                if (empty) throw E();
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "E should be default constructible");
-            }
-        );
+            })(nothing);
 
         return reference();
     }
@@ -1237,7 +1221,7 @@ CPPSTREAM_FORCEINLINE constexpr none_t none() noexcept
 template <typename T, typename... Ts>
 option<T> make_option(Ts&&... args) noexcept(std::is_nothrow_constructible_v<T, Ts...>)
 {
-    return option<T>(in_place{}, std::forward<Ts>(args)...);
+    return option<T>(in_place, std::forward<Ts>(args)...);
 }
 
 template <typename T>
