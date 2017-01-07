@@ -1,2 +1,2 @@
-# stream
-Stream library
+# cppstream
+Java like streams library
