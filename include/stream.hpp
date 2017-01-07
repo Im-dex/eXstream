@@ -8,8 +8,7 @@ namespace cppstream {
 template <typename T,
           typename BeginIterator,
           typename EndIterator>
-class stream final : public with_map<T, stream<T, BeginIterator, EndIterator>>,
-                     public with_flat_map<T, stream<T, BeginIterator, EndIterator>>
+class stream final : public with_transformations<T, stream<T, BeginIterator, EndIterator>>
 {
 public:
 

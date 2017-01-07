@@ -9,8 +9,7 @@ template <typename T,
           typename Function,
           typename BeginTransformIterator,
           typename EndTransformIterator>
-class transformation : public with_map<T, transformation<T, Source, Function, BeginTransformIterator, EndTransformIterator>>,
-                       public with_flat_map<T, transformation<T, Source, Function, BeginTransformIterator, EndTransformIterator>>
+class transformation : public with_transformations<T, transformation<T, Source, Function, BeginTransformIterator, EndTransformIterator>>
 {
     using source_begin_iterator = decltype(std::declval<const Source>().begin());
     using source_end_iterator = decltype(std::declval<const Source>().end());

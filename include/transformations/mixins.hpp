@@ -3,6 +3,7 @@
 #include "constexpr_if.hpp"
 #include "detail/traits.hpp"
 
+#include "error_transformation.hpp"
 #include "map_iterator.hpp"
 #include "flat_map_iterator.hpp"
 
@@ -52,7 +53,7 @@ struct with_map : mixin<SourceSelf, begin_map_iterator, end_map_iterator>
             .else_([](auto) noexcept
             {
                 static_assert(false, "Illegal function argument type");
-                // TODO: return error transformation to suspend a chain of unnessesary compilation errors
+                return error_transformation();
             })(nothing);
     }
 };
@@ -78,15 +79,23 @@ struct with_flat_map : mixin<SourceSelf, begin_flat_map_iterator, end_flat_map_i
                     .else_([](auto) noexcept
                     {
                         static_assert(false, "Function return type should be iterable");
-                        // TODO: return error_t();
+                        return error_transformation();
                     })(nothing);
             })
             .else_([](auto) noexcept
             {
                 static_assert(false, "Illegal function argument type");
-                // TODO: return error_t();
+                return error_transformation();
             })(nothing);
     }
+};
+
+//========================transformations=======================
+
+template <typename T, typename SourceSelf>
+struct with_transformations : public with_map<T, SourceSelf>,
+                              public with_flat_map<T, SourceSelf>
+{
 };
 
 } // cppstream namespace
