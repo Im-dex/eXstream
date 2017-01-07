@@ -1,65 +1,54 @@
 #pragma once
 
 #include "transformations/mixins.hpp"
+#include "transformations/transformation.hpp"
 
 namespace cppstream {
 
 template <typename T,
-          typename BeginIter,
-          typename EndIter>
-class stream final : public with_map<T, stream<T, BeginIter, EndIter>>,
-                     public with_flat_map<T, stream<T, BeginIter, EndIter>>
+          typename BeginIterator,
+          typename EndIterator>
+class stream final : public with_map<T, stream<T, BeginIterator, EndIterator>>,
+                     public with_flat_map<T, stream<T, BeginIterator, EndIterator>>
 {
 public:
 
-    explicit stream(const BeginIter& begin_, const EndIter& end_) noexcept(std::is_nothrow_copy_constructible_v<BeginIter> &&
-                                                                           std::is_nothrow_copy_constructible_v<EndIter>)
+    using begin_iterator = BeginIterator;
+    using end_iterator = EndIterator;
+
+    explicit stream(const begin_iterator& begin_, const end_iterator& end_) noexcept(std::is_nothrow_copy_constructible_v<begin_iterator> &&
+                                                                                     std::is_nothrow_copy_constructible_v<end_iterator>)
         : begin_(begin_),
           end_(end_)
     {
     }
 
-    explicit stream(BeginIter&& begin_, EndIter&& end_) noexcept(std::is_nothrow_move_constructible_v<BeginIter> &&
-                                                                 std::is_nothrow_move_constructible_v<EndIter>)
+    explicit stream(begin_iterator&& begin_, end_iterator&& end_) noexcept(std::is_nothrow_move_constructible_v<begin_iterator> &&
+                                                                           std::is_nothrow_move_constructible_v<end_iterator>)
         : begin_(std::move(begin_)),
           end_(std::move(end_))
     {
     }
 
-    explicit stream(const BeginIter& begin_, EndIter&& end_) noexcept(std::is_nothrow_copy_constructible_v<BeginIter> &&
-                                                                      std::is_nothrow_move_constructible_v<EndIter>)
-        : begin_(begin_),
-          end_(std::move(end_))
-    {
-    }
-
-    explicit stream(BeginIter&& begin_, const EndIter& end_) noexcept(std::is_nothrow_move_constructible_v<BeginIter> &&
-                                                                      std::is_nothrow_copy_constructible_v<EndIter>)
-        : begin_(std::move(begin_)),
-          end_(end_)
-    {
-    }
+    stream(stream&&) = default; // TODO: hide from user
 
     stream(const stream&) = delete;
     stream& operator= (const stream&) = delete;
 
-    stream(stream&&) noexcept(std::is_nothrow_move_constructible_v<BeginIter> && std::is_nothrow_move_constructible_v<EndIter>) = default;
-    stream& operator= (stream&&) noexcept(std::is_nothrow_move_assignable_v<BeginIter> && std::is_nothrow_move_assignable_v<EndIter>) = default;
-
-    BeginIter& begin() const noexcept
+    begin_iterator begin() const noexcept
     {
         return begin_;
     }
 
-    EndIter& end() const noexcept
+    end_iterator end() const noexcept
     {
         return end_;
     }
 
 private:
 
-    BeginIter begin_;
-    EndIter end_;
+    begin_iterator begin_;
+    end_iterator end_;
 };
 
 } // cppstream namespace

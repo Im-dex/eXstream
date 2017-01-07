@@ -1,6 +1,6 @@
 #include "test.hpp"
 
-//#include "source.hpp"
+#include "stream_of.hpp"
 
 using namespace cppstream;
 
@@ -8,9 +8,10 @@ using namespace cppstream;
 
 TEST(TEST_CASE_NAME, _Test)
 {
-    /*std::vector<int> a = { 1, 2, 3 };
-    source(a).map([](auto x) { return x + 1; });*/
-
-    /*source(a).map([](auto v) { return v + 1; })
-             .map([](auto x) { return x + 1; });*/
+    // TODO: check errors on wrong input
+    std::vector<int> a = { 1, 2, 3 };
+    stream_of(a)
+        .map([](int x) noexcept { return x + 1; })
+        .map([](int x) noexcept { return x + 2; })
+        .flat_map([](int x) { return std::vector<int>{ 0, 1, 2, x }; });
 }

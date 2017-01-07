@@ -3,111 +3,80 @@
 #include "detail/type_traits.hpp"
 #include "constexpr_if.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
-#include <cassert>
-CPPSTREAM_RESTORE_ALL_WARNINGS
-
 namespace cppstream {
 
-template <typename T, typename Iter>
+template <typename Iterator,
+          typename Tag = nothing_t /* since C++ does not provide strong typedef functionality, Tag should be used to express that purpose */>
 class transform_iterator
 {
 public:
 
-    explicit transform_iterator(const Iter& iterator) noexcept(std::is_nothrow_copy_constructible_v<Iter>)
+    explicit transform_iterator(const Iterator& iterator) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
         : iterator(iterator)
     {
     }
 
-    explicit transform_iterator(Iter&& iterator) noexcept(std::is_nothrow_move_constructible_v<Iter>)
+    explicit transform_iterator(Iterator&& iterator) noexcept(std::is_nothrow_move_constructible_v<Iterator>)
         : iterator(std::move(iterator))
     {
     }
 
+    transform_iterator(const transform_iterator&) = delete;
+    transform_iterator(transform_iterator&&) = default;
+
+    transform_iterator& operator= (const transform_iterator&) = delete;
+    transform_iterator& operator= (transform_iterator&&) = delete;
+
+    template <typename ThatIterator>
+    bool operator== (const transform_iterator<ThatIterator, Tag>& that) const noexcept(is_nothrow_comparable_to_v<Iterator, ThatIterator>)
+    {
+        return constexpr_if<is_comparable_to_v<Iterator, ThatIterator>>()
+            .then([&](auto) noexcept(is_nothrow_comparable_to_v<Iterator, ThatIterator>)
+            {
+                return iterator == that.iterator;
+            })
+            .else_([](auto) noexcept
+            {
+                static_assert(false, "Iterators are not comparable");
+                return false;
+            })(nothing);
+    }
+
+    template <typename ThatIterator>
+    bool operator!= (const transform_iterator<ThatIterator, Tag>& that) const noexcept(is_nothrow_comparable_to_v<Iterator, ThatIterator>)
+    {
+        return !(*this == that);
+    }
+
 protected:
 
-    template <typename U, typename XIter, typename YIter>
-    friend bool operator== (const transform_iterator<U, XIter>& x, const YIter& y) noexcept(is_nothrow_comparable_to_v<XIter, YIter>);
-
-    Iter iterator;
+    Iterator iterator;
 };
 
-template <typename T, typename Iter>
-class end_transform_iterator final : public transform_iterator<T, Iter>
+template <typename Iterator,
+          typename Tag = nothing_t /* since C++ does not provide strong typedef functionality, Tag should be used to express that purpose */>
+class end_transform_iterator final : public transform_iterator<Iterator, Tag>
 {
 public:
 
-    explicit end_transform_iterator(const Iter& iterator) noexcept(std::is_nothrow_copy_constructible_v<Iter>)
+    explicit end_transform_iterator(const Iterator& iterator) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
         : transform_iterator(iterator)
     {
     }
 
-    explicit end_transform_iterator(Iter&& iterator) noexcept(std::is_nothrow_move_constructible_v<Iter>)
+    explicit end_transform_iterator(Iterator&& iterator) noexcept(std::is_nothrow_move_constructible_v<Iterator>)
         : transform_iterator(std::move(iterator))
     {
     }
 
-    end_transform_iterator& operator++ () noexcept
-    {
-        assert(false && "Iterator is empty");
-        return *this;
-    }
+    end_transform_iterator(const end_transform_iterator&) = delete;
+    end_transform_iterator(end_transform_iterator&&) = default;
 
-    // TODO: __declspec(noreturn)
-    T operator* () noexcept
-    {
-        assert(false && "Iterator is empty");
-        // TODO: terminate or smth else
-        return *reinterpret_cast<T*>(this);
-    }
+    end_transform_iterator& operator= (const end_transform_iterator&) = delete;
+    end_transform_iterator& operator= (end_transform_iterator&&) = delete;
+
+    void operator++ () = delete;
+    void operator* () = delete;
 };
-
-#pragma region iterator comparison
-
-template <typename T, typename XIter, typename YIter>
-bool operator== (const transform_iterator<T, XIter>& x, const YIter& y) noexcept(is_nothrow_comparable_to_v<XIter, YIter>)
-{
-    return CPPSTREAM_CONSTEXPR_IFELSE((is_comparable_to_v<XIter, YIter>),
-        noexcept(is_nothrow_comparable_to_v<XIter, YIter>) {
-            return x.iterator == y;
-        },
-        noexcept {
-            static_assert(false, "Iterators are not comparable");
-            return false;
-        }
-    );
-}
-
-template <typename T, typename XIter, typename YIter>
-bool operator== (const YIter& x, const transform_iterator<T, XIter>& y) noexcept(is_nothrow_comparable_to_v<XIter, YIter>)
-{
-    return y == x;
-}
-
-template <typename T, typename XIter, typename YIter>
-bool operator!= (const YIter& x, const transform_iterator<T, XIter>& y) noexcept(is_nothrow_comparable_to_v<XIter, YIter>)
-{
-    return !(y == x);
-}
-
-template <typename T, typename XIter, typename YIter>
-bool operator!= (const transform_iterator<T, XIter>& x, const YIter& y) noexcept(is_nothrow_comparable_to_v<XIter, YIter>)
-{
-    return !(x == y);
-}
-
-template <typename T, typename XIter, typename YIter>
-bool operator== (const transform_iterator<T, XIter>& x, const transform_iterator<T, YIter>& y) noexcept(is_nothrow_comparable_to_v<XIter, YIter>)
-{
-    return x == y.iterator;
-}
-
-template <typename T, typename XIter, typename YIter>
-bool operator!= (const transform_iterator<T, XIter>& x, const transform_iterator<T, YIter>& y) noexcept(is_nothrow_comparable_to_v<XIter, YIter>)
-{
-    return x != y.iterator;
-}
-
-#pragma endregion
 
 } // cppstream namespace

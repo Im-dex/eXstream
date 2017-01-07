@@ -29,7 +29,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 if (MSVC)
-    add_definitions(/Wall /wd4710 /wd4820 /wd4514 /wd4571)
+    add_definitions(/Wall /wd4710 /wd4820 /wd4514 /wd4571 /wd4503 /WX)
 endif()
 
 add_library(${PROJECT} SHARED ${SOURCES} ${HEADERS} ${DETAIL_HEADERS} ${TRANSFORMATIONS_HEADERS})

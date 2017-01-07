@@ -3,73 +3,89 @@
 #include "constexpr_if.hpp"
 #include "detail/traits.hpp"
 
+#include "map_iterator.hpp"
+#include "flat_map_iterator.hpp"
+
 namespace cppstream {
+
+template <typename T,
+          typename Source,
+          typename Function,
+          typename BeginTransformIterator,
+          typename EndTransformIterator>
+class transformation;
+
+template <typename SourceSelf,
+          template <typename, typename> class BeginTransformIterator,
+          template <typename> class EndTransformIterator>
+class mixin
+{
+protected:
+
+    template <typename Result, typename Function, typename Self>
+    auto make_transformation(const Function& function, const Self& self) const noexcept
+    {
+        using begin_iterator = typename SourceSelf::begin_iterator;
+        using end_iterator = typename SourceSelf::end_iterator;
+
+        using begin_transform_iterator = BeginTransformIterator<begin_iterator, Function>;
+        using end_transform_iterator = EndTransformIterator<end_iterator>;
+
+        return transformation<Result, SourceSelf, Function, begin_transform_iterator, end_transform_iterator>(static_cast<const SourceSelf&>(self), function);
+    }
+};
 
 //========================map=======================
 
-template <typename T, typename Source, typename Function>
-class map_transformation;
-
-template <typename T, typename Self>
-class with_map
+template <typename T, typename SourceSelf>
+struct with_map : mixin<SourceSelf, begin_map_iterator, end_map_iterator>
 {
-public:
-
     template <typename Function>
-    auto map(const Function& function) && noexcept(noexcept(function(std::declval<T>())))
+    auto map(const Function& function) && noexcept
     {
-        return CPPSTREAM_CONSTEXPR_IFELSE((is_invokable_v<Function, T>),
-            noexcept(noexcept(function(std::declval<T>()))) {
+        return constexpr_if<(is_invokable_v<Function, T>)>()
+            .then([&](auto) noexcept
+            {
                 using result = std::result_of_t<Function(T)>;
-                return (map_transformation<result, Self, Function>(*this, function));
-            },
-            noexcept {
+                return make_transformation<result>(function, *this);
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Illegal function argument type");
-            }
-        );
+                // TODO: return error transformation to suspend a chain of unnessesary compilation errors
+            })(nothing);
     }
 };
 
 //========================flat_map=======================
 
-template <typename T, typename Source, typename Function>
-class flat_map_transformation;
-
-template <typename T, typename Self>
-class with_flat_map
+template <typename T, typename SourceSelf>
+struct with_flat_map : mixin<SourceSelf, begin_flat_map_iterator, end_flat_map_iterator>
 {
-public:
-
     template <typename Function>
-    auto flat_map(const Function& function) && noexcept(noexcept(function(std::declval<T>())))
+    auto flat_map(const Function& function) && noexcept
     {
-        return CPPSTREAM_CONSTEXPR_IFELSE((is_invokable_v<Function, T>),
-            noexcept(noexcept(function(std::declval<T>()))) {
+        return constexpr_if<is_invokable_v<Function, T>>()
+            .then([&](auto) noexcept
+            {
                 using result = remove_cvr_t<std::result_of_t<Function(T)>>;
-                return flat_map_impl<result>(function);
-            },
-            noexcept {
+                return constexpr_if<is_iterable_v<result>>()
+                    .then([&](auto) noexcept
+                    {
+                        using value_type = remove_cvr_t<decltype(*std::declval<result>().begin())>;
+                        return make_transformation<value_type&>(function, *this);
+                    })
+                    .else_([](auto) noexcept
+                    {
+                        static_assert(false, "Function return type should be iterable");
+                        // TODO: return error_t();
+                    })(nothing);
+            })
+            .else_([](auto) noexcept
+            {
                 static_assert(false, "Illegal function argument type");
-                return error_t();
-            }
-        );
-    }
-
-private:
-
-    template <typename Result, typename Function>
-    auto flat_map_impl(const Function& function) &&
-    {
-        return CPPSTREAM_CONSTEXPR_IFELSE(is_iterable_v<Result>,
-            noexcept {
-                using value_type = remove_cvr_t<decltype(*std::declval<Result>().begin())>;
-                return (flat_map_transformation<value_type&, Self, Function>(*this, function));
-            },
-            noexcept {
-                static_assert(false, "Function return type should be iterable.");
-                return error_t();
-            }
-        );
+                // TODO: return error_t();
+            })(nothing);
     }
 };
 
