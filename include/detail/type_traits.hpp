@@ -62,7 +62,7 @@ using remove_cvr = std::remove_cv<std::remove_reference_t<T>>;
 template <typename T>
 using remove_cvr_t = typename remove_cvr<T>::type;
 
-template <typename T, typename U, typename R = std::void_t<>>
+template <typename T, typename U, typename AlwaysVoid = std::void_t<>>
 struct is_comparable_to : public std::false_type {};
 
 template <typename T, typename U>
@@ -77,7 +77,7 @@ using is_comparable = is_comparable_to<T, T>;
 template <typename T>
 constexpr bool is_comparable_v = is_comparable<T>::value;
 
-template <typename T, typename U, bool R = is_comparable_to_v<T, U>>
+template <typename T, typename U, bool AlwaysVoid = is_comparable_to_v<T, U>>
 struct is_nothrow_comparable_to : public std::false_type {};
 
 template <typename T, typename U>
