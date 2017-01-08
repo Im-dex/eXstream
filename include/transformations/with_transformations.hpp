@@ -16,31 +16,11 @@ template <typename T,
           typename EndTransformIterator>
 class transformation;
 
-template <typename SourceSelf,
-          template <typename, typename> class BeginTransformIterator,
-          template <typename> class EndTransformIterator>
-class mixin
+template <typename T, typename Self>
+class with_transformations
 {
-protected:
+public:
 
-    template <typename Result, typename Function, typename Self>
-    auto make_transformation(const Function& function, const Self& self) const noexcept
-    {
-        using begin_iterator = typename SourceSelf::begin_iterator;
-        using end_iterator = typename SourceSelf::end_iterator;
-
-        using begin_transform_iterator = BeginTransformIterator<begin_iterator, Function>;
-        using end_transform_iterator = EndTransformIterator<end_iterator>;
-
-        return transformation<Result, SourceSelf, Function, begin_transform_iterator, end_transform_iterator>(static_cast<const SourceSelf&>(self), function);
-    }
-};
-
-//========================map=======================
-
-template <typename T, typename SourceSelf>
-struct with_map : mixin<SourceSelf, begin_map_iterator, end_map_iterator>
-{
     template <typename Function>
     auto map(const Function& function) && noexcept
     {
@@ -48,7 +28,7 @@ struct with_map : mixin<SourceSelf, begin_map_iterator, end_map_iterator>
             .then([&](auto) noexcept
             {
                 using result = std::result_of_t<Function(T)>;
-                return make_transformation<result>(function, *this);
+                return make_transformation<begin_map_iterator, end_map_iterator, result>(function);
             })
             .else_([](auto) noexcept
             {
@@ -56,13 +36,7 @@ struct with_map : mixin<SourceSelf, begin_map_iterator, end_map_iterator>
                 return error_transformation();
             })(nothing);
     }
-};
 
-//========================flat_map=======================
-
-template <typename T, typename SourceSelf>
-struct with_flat_map : mixin<SourceSelf, begin_flat_map_iterator, end_flat_map_iterator>
-{
     template <typename Function>
     auto flat_map(const Function& function) && noexcept
     {
@@ -74,7 +48,7 @@ struct with_flat_map : mixin<SourceSelf, begin_flat_map_iterator, end_flat_map_i
                     .then([&](auto) noexcept
                     {
                         using value_type = remove_cvr_t<decltype(*std::declval<result>().begin())>;
-                        return make_transformation<value_type&>(function, *this);
+                        return make_transformation<begin_flat_map_iterator, end_flat_map_iterator, value_type&>(function);
                     })
                     .else_([](auto) noexcept
                     {
@@ -88,14 +62,23 @@ struct with_flat_map : mixin<SourceSelf, begin_flat_map_iterator, end_flat_map_i
                 return error_transformation();
             })(nothing);
     }
-};
 
-//========================transformations=======================
+private:
 
-template <typename T, typename SourceSelf>
-struct with_transformations : public with_map<T, SourceSelf>,
-                              public with_flat_map<T, SourceSelf>
-{
+    template <template <typename, typename> class BeginTransformIterator,
+              template <typename> class EndTransformIterator,
+              typename Result,
+              typename Function>
+    auto make_transformation(const Function& function) const noexcept
+    {
+        using begin_iterator = typename Self::begin_iterator;
+        using end_iterator = typename Self::end_iterator;
+
+        using begin_transform_iterator = BeginTransformIterator<begin_iterator, Function>;
+        using end_transform_iterator = EndTransformIterator<end_iterator>;
+
+        return transformation<Result, Self, Function, begin_transform_iterator, end_transform_iterator>(static_cast<const Self&>(*this), function);
+    }
 };
 
 } // cppstream namespace
