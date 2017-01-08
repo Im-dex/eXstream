@@ -11,13 +11,15 @@ public:
 
     using value_type = std::result_of_t<const Function&(typename Range::value_type)>;
 
-    explicit map_range(const Range& range, const Function& function) noexcept(std::is_nothrow_copy_constructible_v<Range>)
+    template <typename Allocator>
+    explicit map_range(const Range& range, const Function& function, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Range>)
         : transform_range(range),
           function(function)
     {
     }
 
-    explicit map_range(Range&& range, const Function& function) noexcept(std::is_nothrow_move_constructible_v<Range>)
+    template <typename Allocator>
+    explicit map_range(Range&& range, const Function& function, const Allocator&) noexcept(std::is_nothrow_move_constructible_v<Range>)
         : transform_range(std::move(range)),
           function(function)
     {

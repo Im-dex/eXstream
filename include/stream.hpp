@@ -5,20 +5,27 @@
 
 namespace cppstream {
 
-template <typename T, typename Range>
-class stream final : public with_transformations<T, stream<T, Range>>
+template <typename T,
+          typename Range,
+          typename Allocator>
+class stream final : public with_transformations<T, stream<T, Range, Allocator>>
 {
 public:
 
     using range_type = Range;
+    using allocator = Allocator;
 
-    explicit stream(const Range& range) noexcept(std::is_nothrow_copy_constructible_v<Range>)
-        : range(range)
+    explicit stream(Range&& range, const Allocator& alloc) noexcept(std::is_nothrow_move_constructible_v<Range> &&
+                                                                    std::is_nothrow_copy_constructible_v<Allocator>)
+        : alloc(alloc),
+          range(range)
     {
     }
 
-    explicit stream(Range&& range) noexcept(std::is_nothrow_move_constructible_v<Range>)
-        : range(std::move(range))
+    explicit stream(Range&& range, Allocator&& alloc) noexcept(std::is_nothrow_move_constructible_v<Range> &&
+                                                               std::is_nothrow_move_constructible_v<Allocator>)
+        : alloc(std::move(alloc)),
+          range(std::move(range))
     {
     }
 
@@ -27,13 +34,24 @@ public:
     stream(const stream&) = delete;
     stream& operator= (const stream&) = delete;
 
+    Range& get_range() noexcept
+    {
+        return range;
+    }
+
     const Range& get_range() const noexcept
     {
         return range;
     }
 
+    const Allocator& get_allocator() const noexcept
+    {
+        return alloc;
+    }
+
 private:
 
+    const Allocator alloc;
     Range range;
 };
 

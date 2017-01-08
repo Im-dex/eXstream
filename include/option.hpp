@@ -386,7 +386,23 @@ public:
     {
         return !(*this == that);
     }
-    
+
+    // TODO: test
+    template <typename... Args>
+    void emplace(Args&&... args) noexcept(std::is_nothrow_destructible_v<T> && std::is_nothrow_constructible_v<T, Args...>)
+    {
+        constexpr_if<std::is_constructible_v<T, Args...>>()
+            .then([](auto&&... args) noexcept(std::is_nothrow_destructible_v<T> && std::is_nothrow_constructible_v<T, decltype(args)...>)
+            {
+                if (non_empty()) destroy();
+                construct(std::forward<decltype(args)>(args)...);
+            })
+            .else_([](auto...) noexcept
+            {
+                static_assert(false, "Optional type couldn't be constructed from the passed arguments");
+            })(std::forward<Args>(args)...);
+    }
+
     size_t size() const noexcept
     {
         return empty() ? size_t(0) : size_t(1);

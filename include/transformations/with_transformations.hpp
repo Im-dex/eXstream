@@ -2,21 +2,31 @@
 
 #include "constexpr_if.hpp"
 #include "detail/traits.hpp"
-
+#include "detail/partial_application.hpp"
 #include "error_transformation.hpp"
+
 #include "map_range.hpp"
 #include "flat_map_range.hpp"
 #include "filter_range.hpp"
+#include "distinct_range.hpp"
 
 namespace cppstream {
 
 template <typename T,
           typename Source,
           typename Function,
-          typename TransformRange>
+          typename TransformRange,
+          typename Allocator>
 class transformation;
 
-template <typename T, typename Self>
+template <typename T,
+          typename Source,
+          typename TransformRange,
+          typename Allocator>
+class independent_transformation;
+
+template <typename T,
+          typename Self>
 class with_transformations
 {
 public:
@@ -47,8 +57,13 @@ public:
                 return constexpr_if<is_iterable_v<result>>()
                     .then([&](auto) noexcept
                     {
+                        using allocator = typename Self::allocator;
                         using value_type = remove_cvr_t<decltype(*std::begin(std::declval<result>()))>;
-                        return make_transformation<flat_map_range, value_type&>(function);
+
+                        return make_transformation<
+                            partial_apply3<flat_map_range, allocator>::bind_3,
+                            value_type&
+                        >(function);
                     })
                     .else_([](auto) noexcept
                     {
@@ -78,7 +93,20 @@ public:
             })(nothing);
     }
 
+    // TODO: allocator is not neccessary if stream is ordered
+    auto distinct() && noexcept
+    {
+        using allocator = typename Self::allocator;
+
+        return make_transformation<partial_apply2<distinct_range, allocator>::bind_2>();
+    }
+
 private:
+
+    const Self& self() const noexcept
+    {
+        return static_cast<const Self&>(*this);
+    }
 
     template <template <typename, typename> class TransformRange,
               typename Result,
@@ -86,9 +114,19 @@ private:
     auto make_transformation(const Function& function) const noexcept
     {
         using self_range_type = typename Self::range_type;
+        using allocator = typename Self::allocator;
         using range_type = TransformRange<self_range_type, Function>;
 
-        return transformation<Result, Self, Function, range_type>(static_cast<const Self&>(*this), function);
+        return transformation<Result, Self, Function, range_type, allocator>(self(), function, self().get_allocator());
+    }
+
+    template <template <typename> class TransformRange>
+    auto make_transformation() const noexcept
+    {
+        using self_range_type = typename Self::range_type;
+        using allocator = typename Self::allocator;
+
+        return independent_transformation<T, Self, TransformRange<self_range_type>, allocator>(self(), self().get_allocator());
     }
 };
 

@@ -1,7 +1,10 @@
 #pragma once
 
-#include "detail/type_traits.hpp"
-#include "constexpr_if.hpp"
+#include "config.hpp"
+
+CPPSTREAM_SUPPRESS_ALL_WARNINGS
+#include <type_traits>
+CPPSTREAM_RESTORE_ALL_WARNINGS
 
 namespace cppstream {
 

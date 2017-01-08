@@ -23,14 +23,16 @@ public:
 
     using value_type = typename Range::value_type;
 
-    filter_range(const Range& range, const Function& function) noexcept(std::is_nothrow_copy_constructible_v<Range>)
+    template <typename Allocator>
+    filter_range(const Range& range, const Function& function, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Range>)
         : transform_range(range),
           function(function),
           synchronized(false)
     {
     }
 
-    filter_range(Range&& range, const Function& function) noexcept(std::is_nothrow_move_constructible_v<Range>)
+    template <typename Allocator>
+    filter_range(Range&& range, const Function& function, const Allocator&) noexcept(std::is_nothrow_move_constructible_v<Range>)
         : transform_range(std::move(range)),
           function(function),
           synchronized(false)

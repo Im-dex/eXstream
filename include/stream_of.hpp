@@ -37,11 +37,11 @@ constexpr bool is_stream_nothrow_constructible_v = is_stream_nothrow_constructib
 
 }} // detail::stream_of namespasce
 
-template <typename T>
-auto stream_of(T&& iterable) noexcept(detail::stream_of::is_stream_nothrow_constructible_v<T>)
+template <typename T, typename Allocator = std::allocator<unsigned char> /* TODO: maybe take from iterable??? */>
+auto stream_of(T&& iterable, const Allocator& alloc = Allocator()) noexcept(detail::stream_of::is_stream_nothrow_constructible_v<T>)
 {
     return constexpr_if<is_iterable_v<remove_cvr_t<T>>>()
-        .then([](auto&& iterable) noexcept(detail::stream_of::is_stream_nothrow_constructible_v<decltype(iterable)>)
+        .then([](auto&& iterable, const auto& alloc) noexcept(detail::stream_of::is_stream_nothrow_constructible_v<decltype(iterable)>)
         {
             detail::stream_of::iterable_type<decltype(iterable)> ref = iterable;
 
@@ -50,13 +50,14 @@ auto stream_of(T&& iterable) noexcept(detail::stream_of::is_stream_nothrow_const
             using value_type = decltype(*std::declval<begin_iterator>());
             using range_type = range<begin_iterator, end_iterator>;
 
-            return stream<value_type, range_type>(range_type(std::begin(ref), std::end(ref)));
+            // TODO: move_iterator
+            return stream<value_type, range_type, Allocator>(range_type(std::begin(ref), std::end(ref)), alloc);
         })
-        .else_([](auto) noexcept
+        .else_([](auto, auto) noexcept
         {
             static_assert(false, "Stream source should meet 'Iterable' concept");
             return error_transformation();
-        })(std::forward<T>(iterable));
+        })(std::forward<T>(iterable), alloc);
 }
 
 } // cppstream namespace
