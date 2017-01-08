@@ -6,6 +6,7 @@
 #include "error_transformation.hpp"
 #include "map_range.hpp"
 #include "flat_map_range.hpp"
+#include "filter_range.hpp"
 
 namespace cppstream {
 
@@ -23,7 +24,7 @@ public:
     template <typename Function>
     auto map(const Function& function) && noexcept
     {
-        return constexpr_if<(is_invokable_v<Function, T>)>()
+        return constexpr_if<(is_invokable_v<const Function&, T>)>()
             .then([&](auto) noexcept
             {
                 using result = std::result_of_t<const Function&(T)>;
@@ -31,7 +32,7 @@ public:
             })
             .else_([](auto) noexcept
             {
-                static_assert(false, "Illegal function argument type");
+                static_assert(false, "Illegal function signature");
                 return error_transformation();
             })(nothing);
     }
@@ -39,7 +40,7 @@ public:
     template <typename Function>
     auto flat_map(const Function& function) && noexcept
     {
-        return constexpr_if<is_invokable_v<Function, T>>()
+        return constexpr_if<is_invokable_v<const Function&, T>>()
             .then([&](auto) noexcept
             {
                 using result = remove_cvr_t<std::result_of_t<const Function&(T)>>;
@@ -57,7 +58,22 @@ public:
             })
             .else_([](auto) noexcept
             {
-                static_assert(false, "Illegal function argument type");
+                static_assert(false, "Illegal function signature");
+                return error_transformation();
+            })(nothing);
+    }
+
+    template <typename Function>
+    auto filter(const Function& function) && noexcept
+    {
+        return constexpr_if<is_callable_v<const Function&, bool, T>>()
+            .then([&](auto) noexcept
+            {
+                return make_transformation<filter_range, T>(function);
+            })
+            .else_([](auto) noexcept
+            {
+                static_assert(false, "Illegal function signature");
                 return error_transformation();
             })(nothing);
     }
