@@ -90,10 +90,10 @@ struct is_iterable
 {
     template <typename U1, typename U2>
     static auto check(U1& x, const U2& y) -> decltype(std::conjunction<
-        cppstream::is_forward_iterator<decltype(x.begin())>,
-        cppstream::is_forward_iterator<decltype(x.end())>,
-        cppstream::is_forward_iterator<decltype(y.begin())>,
-        cppstream::is_forward_iterator<decltype(y.end())>
+        cppstream::is_forward_iterator<decltype(std::begin(x))>,
+        cppstream::is_forward_iterator<decltype(std::end(x))>,
+        cppstream::is_forward_iterator<decltype(std::begin(y))>,
+        cppstream::is_forward_iterator<decltype(std::end(y))>
     >{});
 
     static std::false_type check(...);
@@ -106,10 +106,10 @@ struct is_reverse_iterable
 {
     template <typename U1, typename U2>
     static auto check(U1& x, const U2& y) -> decltype(std::conjunction<
-        cppstream::is_forward_iterator<decltype(x.rbegin())>,
-        cppstream::is_forward_iterator<decltype(x.rend())>,
-        cppstream::is_forward_iterator<decltype(y.rbegin())>,
-        cppstream::is_forward_iterator<decltype(y.rend())>
+        cppstream::is_forward_iterator<decltype(std::rbegin(x))>,
+        cppstream::is_forward_iterator<decltype(std::rend(x))>,
+        cppstream::is_forward_iterator<decltype(std::rbegin(y))>,
+        cppstream::is_forward_iterator<decltype(std::rend(y))>
     >{});
 
     static std::false_type check(...);

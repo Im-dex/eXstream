@@ -4,7 +4,7 @@
 
 using namespace cppstream;
 
-#define TEST_CASE_NAME StreamTest
+#define TEST_CASE_NAME FunctionViewTest
 
 TEST(TEST_CASE_NAME, _Test)
 {

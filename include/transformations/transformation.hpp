@@ -7,19 +7,15 @@ namespace cppstream {
 template <typename T,
           typename Source,
           typename Function,
-          typename BeginTransformIterator,
-          typename EndTransformIterator>
-class transformation : public with_transformations<T, transformation<T, Source, Function, BeginTransformIterator, EndTransformIterator>>
+          typename TransformRange>
+class transformation : public with_transformations<T, transformation<T, Source, Function, TransformRange>>
 {
-    using source_begin_iterator = decltype(std::declval<const Source>().begin());
-    using source_end_iterator = decltype(std::declval<const Source>().end());
+    using source_range = decltype(std::declval<const Source>().get_range());
 
-    static_assert(std::is_constructible_v<BeginTransformIterator, source_begin_iterator, const Function&>, "Invalid BeginTransformIterator");
-    static_assert(std::is_constructible_v<EndTransformIterator, source_end_iterator>, "Invalid EndTransformIterator");
+    static_assert(std::is_constructible_v<TransformRange, source_range, const Function&>, "Invalid TransformRange");
 public:
 
-    using begin_iterator = BeginTransformIterator;
-    using end_iterator = EndTransformIterator;
+    using range_type = TransformRange;
 
     explicit transformation(const Source& source, const Function& function) noexcept
         : source(source),
@@ -32,16 +28,10 @@ public:
     transformation(const transformation&) = delete;
     transformation& operator= (const transformation&) = delete;
 
-    begin_iterator begin() const noexcept(std::is_nothrow_constructible_v<begin_iterator, source_begin_iterator, const Function&> &&
-                                          std::is_nothrow_move_constructible_v<begin_iterator>)
+    TransformRange get_range() const noexcept(std::is_nothrow_constructible_v<TransformRange, source_range, const Function&> &&
+                                              std::is_nothrow_move_constructible_v<TransformRange>)
     {
-        return begin_iterator(source.begin(), function);
-    }
-
-    end_iterator end() const noexcept(std::is_nothrow_constructible_v<end_iterator, source_end_iterator> &&
-                                      std::is_nothrow_move_constructible_v<end_iterator>)
-    {
-        return end_iterator(source.end());
+        return TransformRange(source.get_range(), function);
     }
 
 private:

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stream.hpp"
+#include "range.hpp"
 #include "detail/traits.hpp"
 
 namespace cppstream {
@@ -22,11 +23,11 @@ template <typename Iterable>
 struct is_stream_nothrow_constructible<Iterable, true> final
 {
     using iterable = iterable_type<Iterable>;
-    using begin_iterator = decltype(std::declval<iterable>().begin());
-    using end_iterator = decltype(std::declval<iterable>().end());
+    using begin_iterator = decltype(std::begin(std::declval<iterable>()));
+    using end_iterator = decltype(std::end(std::declval<iterable>()));
 
-    static constexpr bool result = noexcept(std::declval<Iterable>().begin())           &&
-                                   noexcept(std::declval<Iterable>().end())             &&
+    static constexpr bool result = noexcept(std::begin(std::declval<Iterable>()))       &&
+                                   noexcept(std::end(std::declval<Iterable>()))         &&
                                    std::is_nothrow_move_constructible_v<begin_iterator> &&
                                    std::is_nothrow_move_constructible_v<end_iterator>;
 };
@@ -44,11 +45,12 @@ auto stream_of(T&& iterable) noexcept(detail::stream_of::is_stream_nothrow_const
         {
             detail::stream_of::iterable_type<decltype(iterable)> ref = iterable;
 
-            using begin_iterator = decltype(ref.begin());
-            using end_iterator = decltype(ref.end());
+            using begin_iterator = decltype(std::begin(ref));
+            using end_iterator = decltype(std::end(ref));
             using value_type = decltype(*std::declval<begin_iterator>());
+            using range_type = range<begin_iterator, end_iterator>;
 
-            return stream<value_type, begin_iterator, end_iterator>(ref.begin(), ref.end());
+            return stream<value_type, range_type>(range_type(std::begin(ref), std::end(ref)));
         })
         .else_([](auto) noexcept
         {
