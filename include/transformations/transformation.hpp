@@ -6,7 +6,7 @@ namespace cppstream {
 
 template <typename T,
           typename Source,
-          typename TransformRange,
+          typename TransformIterator,
           typename Allocator,
           typename Meta,
           typename Self>
@@ -14,7 +14,7 @@ class base_transformation : public with_transformations<T, Self>
 {
 public:
 
-    using range_type = TransformRange;
+    using iterator_type = TransformIterator;
     using allocator = Allocator;
     using meta = Meta;
 
@@ -46,13 +46,13 @@ private:
 template <typename T,
           typename Source,
           typename Function,
-          typename TransformRange,
+          typename TransformIterator,
           typename Allocator,
           typename Meta>
-class transformation : public base_transformation<T, Source, TransformRange, Allocator, Meta, transformation<T, Source, Function, TransformRange, Allocator, Meta>>
+class transformation : public base_transformation<T, Source, TransformIterator, Allocator, Meta, transformation<T, Source, Function, TransformIterator, Allocator, Meta>>
 {
-    using source_range = decltype(std::declval<const Source>().get_range());
-    static_assert(std::is_constructible_v<TransformRange, source_range, const Function&, const Allocator&>, "Invalid TransformRange");
+    using source_iterator = decltype(std::declval<const Source>().get_iterator());
+    static_assert(std::is_constructible_v<TransformIterator, source_iterator, const Function&, const Allocator&>, "Invalid TransformIterator");
 public:
 
     explicit transformation(const Source& source, const Function& function, const Allocator& alloc) noexcept
@@ -66,10 +66,10 @@ public:
     transformation(const transformation&) = delete;
     transformation& operator= (const transformation&) = delete;
 
-    TransformRange get_range() const noexcept(std::is_nothrow_constructible_v<TransformRange, source_range, const Function&> &&
-                                              std::is_nothrow_move_constructible_v<TransformRange>)
+    TransformIterator get_iterator() const noexcept(std::is_nothrow_constructible_v<TransformIterator, source_iterator, const Function&> &&
+                                                    std::is_nothrow_move_constructible_v<TransformIterator>)
     {
-        return TransformRange(source.get_range(), function, get_allocator());
+        return TransformIterator(source.get_iterator(), function, get_allocator());
     }
 
 private:
@@ -79,10 +79,10 @@ private:
 
 template <typename T,
           typename Source,
-          typename TransformRange,
+          typename TransformIterator,
           typename Allocator,
           typename Meta>
-class independent_transformation : public base_transformation<T, Source, TransformRange, Allocator, Meta, independent_transformation<T, Source, TransformRange, Allocator, Meta>>
+class independent_transformation : public base_transformation<T, Source, TransformIterator, Allocator, Meta, independent_transformation<T, Source, TransformIterator, Allocator, Meta>>
 {
 public:
 
@@ -96,10 +96,10 @@ public:
     independent_transformation(const independent_transformation&) = delete;
     independent_transformation& operator= (const independent_transformation&) = delete;
 
-    TransformRange get_range() const noexcept(std::is_nothrow_constructible_v<TransformRange, const Source&> &&
-                                              std::is_nothrow_move_constructible_v<TransformRange>)
+    TransformIterator get_iterator() const noexcept(std::is_nothrow_constructible_v<TransformIterator, const Source&> &&
+                                                    std::is_nothrow_move_constructible_v<TransformIterator>)
     {
-        return TransformRange(source.get_range(), get_allocator());
+        return TransformIterator(source.get_iterator(), get_allocator());
     }
 };
 

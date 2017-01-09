@@ -1,6 +1,6 @@
 #pragma once
 
-#include "transform_range.hpp"
+#include "transform_iterator.hpp"
 #include "option.hpp"
 #include "meta_info.hpp"
 
@@ -37,21 +37,21 @@ struct allocator_holder<Allocator, true> final
     const Allocator& alloc;
 };
 
-template <typename Function, typename Range>
+template <typename Iterator, typename Function>
 constexpr bool is_nothrow_function_call() noexcept
 {
-    return noexcept(std::declval<const Function&>()(std::declval<typename Range::value_type>()));
+    return noexcept(std::declval<const Function&>()(std::declval<typename Iterator::value_type>()));
 }
 
 }} // detail::flat_map namespace
 
-template <typename Range,
+template <typename Iterator,
           typename Function,
           typename Meta,
           typename Allocator>
-class flat_map_range final : public transform_range<Range>
+class flat_map_iterator final : public transform_iterator<Iterator>
 {
-    using stream_t = remove_cvr_t<std::result_of_t<const Function&(typename Range::value_type)>>;
+    using stream_t = remove_cvr_t<std::result_of_t<const Function&(typename Iterator::value_type)>>;
     using stream_begin_iterator = remove_cvr_t<decltype(std::begin(std::declval<stream_t>()))>;
     using stream_end_iterator = remove_cvr_t<decltype(std::end(std::declval<stream_t>()))>;
 public:
@@ -59,40 +59,40 @@ public:
     using value_type = decltype(*std::declval<stream_begin_iterator>());
     using meta = meta_info<false, false, Order::Unknown>;
 
-    explicit flat_map_range(const Range& range, const Function& function, const Allocator& alloc) noexcept(std::is_nothrow_copy_constructible_v<Range> &&
-                                                                                                           std::is_nothrow_default_constructible_v<stream_begin_iterator>)
-        : transform_range(range),
-          allocHolder(alloc),
-          function(function),
+    explicit flat_map_iterator(const Iterator& iterator, const Function& function, const Allocator& alloc) noexcept(std::is_nothrow_copy_constructible_v<Iterator> &&
+                                                                                                                    std::is_nothrow_default_constructible_v<stream_begin_iterator>)
+        : transform_iterator(iterator),
+          stream(),
           streamIterator(),
-          stream()
+          allocHolder(alloc),
+          function(function)
     {
     }
 
-    explicit flat_map_range(Range&& range, const Function& function, const Allocator& alloc) noexcept(std::is_nothrow_move_constructible_v<Range> &&
-                                                                                                      std::is_nothrow_default_constructible_v<stream_begin_iterator>)
-        : transform_range(std::move(range)),
-          allocHolder(alloc),
-          function(function),
+    explicit flat_map_iterator(Iterator&& iterator, const Function& function, const Allocator& alloc) noexcept(std::is_nothrow_move_constructible_v<Iterator> &&
+                                                                                                               std::is_nothrow_default_constructible_v<stream_begin_iterator>)
+        : transform_iterator(std::move(iterator)),
+          stream(),
           streamIterator(),
-          stream()
+          allocHolder(alloc),
+          function(function)
     {
     }
 
-    flat_map_range(const flat_map_range&) = delete;
-    flat_map_range(flat_map_range&&) = default;
+    flat_map_iterator(const flat_map_iterator&) = delete;
+    flat_map_iterator(flat_map_iterator&&) = default;
 
-    flat_map_range& operator= (const flat_map_range&) = delete;
-    flat_map_range& operator= (flat_map_range&&) = delete;
+    flat_map_iterator& operator= (const flat_map_iterator&) = delete;
+    flat_map_iterator& operator= (flat_map_iterator&&) = delete;
 
-    bool at_end() /*TODO: const*/ noexcept(noexcept(std::declval<const Range>().at_end()) &&
-                                           noexcept(std::end(std::declval<stream_t>()))   &&
+    bool at_end() /*TODO: const*/ noexcept(noexcept(std::declval<const Iterator>().at_end()) &&
+                                           noexcept(std::end(std::declval<stream_t>()))      &&
                                            is_nothrow_comparable_to_v<stream_begin_iterator, stream_end_iterator>)
     {
-        return range.at_end() && (stream.empty() || (streamIterator == std::end(stream.get())));
+        return iterator.at_end() && (stream.empty() || (streamIterator == std::end(stream.get())));
     }
 
-    void advance() noexcept(noexcept(std::declval<Range>().advance())         &&
+    void advance() noexcept(noexcept(std::declval<Iterator>().advance())      &&
                             noexcept(++std::declval<stream_begin_iterator>()) &&
                             std::is_nothrow_destructible_v<stream_t>          &&
                             is_nothrow_comparable_to_v<stream_begin_iterator, stream_end_iterator>)
@@ -104,18 +104,18 @@ public:
         else
         {
             stream.reset();
-            range.advance();
+            iterator.advance();
         }
     }
 
     // TODO: value_type<std::remove_reference_t<T>>
-    value_type get_value() noexcept(detail::flat_map::is_nothrow_function_call<Function, Range>() &&
-                                    noexcept(std::begin(std::declval<stream_t>()))                &&
+    value_type get_value() noexcept(detail::flat_map::is_nothrow_function_call<Iterator, Function>() &&
+                                    noexcept(std::begin(std::declval<stream_t>()))                   &&
                                     noexcept(*std::declval<stream_begin_iterator>())) // TODO: stream_t noexcept + emplace or assign noexcept
     {
         if (stream.empty())
         {
-            auto&& value = function(range.get_value());
+            auto&& value = function(iterator.get_value());
 
             constexpr_if<is_allocator_used::value>()
                 .then([&](auto) noexcept(noexcept(std::declval<option<stream_t>>().emplace(std::declval<decltype(value)>(), std::declval<const Allocator&>())))
@@ -139,10 +139,10 @@ private:
 
     using alloc_holder = detail::flat_map::allocator_holder<Allocator, is_allocator_used::value>;
 
+    option<stream_t> stream;
+    stream_begin_iterator streamIterator;
     alloc_holder allocHolder;
     const Function& function;
-    stream_begin_iterator streamIterator;
-    option<stream_t> stream;
 };
 
 } // cppstream namespace

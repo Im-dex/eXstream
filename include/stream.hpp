@@ -6,28 +6,28 @@
 namespace cppstream {
 
 template <typename T,
-          typename Range,
+          typename Iterator,
           typename Allocator,
           typename Meta>
-class stream final : public with_transformations<T, stream<T, Range, Allocator, Meta>>
+class stream final : public with_transformations<T, stream<T, Iterator, Allocator, Meta>>
 {
 public:
 
-    using range_type = Range;
+    using iterator_type = Iterator;
     using allocator = Allocator;
     using meta = Meta;
 
-    explicit stream(Range&& range, const Allocator& alloc) noexcept(std::is_nothrow_move_constructible_v<Range> &&
-                                                                    std::is_nothrow_copy_constructible_v<Allocator>)
+    explicit stream(Iterator&& iterator, const Allocator& alloc) noexcept(std::is_nothrow_move_constructible_v<Iterator> &&
+                                                                          std::is_nothrow_copy_constructible_v<Allocator>)
         : alloc(alloc),
-          range(range)
+          iterator(iterator)
     {
     }
 
-    explicit stream(Range&& range, Allocator&& alloc) noexcept(std::is_nothrow_move_constructible_v<Range> &&
-                                                               std::is_nothrow_move_constructible_v<Allocator>)
+    explicit stream(Iterator&& iterator, Allocator&& alloc) noexcept(std::is_nothrow_move_constructible_v<Iterator> &&
+                                                                     std::is_nothrow_move_constructible_v<Allocator>)
         : alloc(std::move(alloc)),
-          range(std::move(range))
+          iterator(std::move(iterator))
     {
     }
 
@@ -36,14 +36,14 @@ public:
     stream(const stream&) = delete;
     stream& operator= (const stream&) = delete;
 
-    Range& get_range() noexcept
+    Iterator& get_iterator() noexcept
     {
-        return range;
+        return iterator;
     }
 
-    const Range& get_range() const noexcept
+    const Iterator& get_iterator() const noexcept
     {
-        return range;
+        return iterator;
     }
 
     const Allocator& get_allocator() const noexcept
@@ -54,7 +54,7 @@ public:
 private:
 
     const Allocator alloc;
-    Range range;
+    Iterator iterator;
 };
 
 } // cppstream namespace

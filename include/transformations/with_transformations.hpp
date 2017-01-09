@@ -5,10 +5,10 @@
 #include "detail/partial_application.hpp"
 #include "error_transformation.hpp"
 
-#include "map_range.hpp"
-#include "flat_map_range.hpp"
-#include "filter_range.hpp"
-#include "distinct_range.hpp"
+#include "map_iterator.hpp"
+#include "flat_map_iterator.hpp"
+#include "filter_iterator.hpp"
+#include "distinct_iterator.hpp"
 
 namespace cppstream {
 
@@ -40,7 +40,7 @@ public:
             .then([&](auto) noexcept
             {
                 using result = std::result_of_t<const Function&(T)>;
-                return make_transformation<map_range, result>(function);
+                return make_transformation<map_iterator, result>(function);
             })
             .else_([](auto) noexcept
             {
@@ -63,7 +63,7 @@ public:
                         using value_type = remove_cvr_t<decltype(*std::begin(std::declval<result>()))>;
 
                         return make_transformation<
-                            partial_apply4<flat_map_range, allocator>::bind_4,
+                            partial_apply4<flat_map_iterator, allocator>::bind_4,
                             value_type&
                         >(function);
                     })
@@ -86,7 +86,7 @@ public:
         return constexpr_if<is_callable_v<const Function&, bool, T>>()
             .then([&](auto) noexcept
             {
-                return make_transformation<filter_range, T>(function);
+                return make_transformation<filter_iterator, T>(function);
             })
             .else_([](auto) noexcept
             {
@@ -100,7 +100,7 @@ public:
     {
         using allocator = typename Self::allocator;
 
-        return make_transformation<partial_apply3<distinct_range, allocator>::bind_3>();
+        return make_transformation<partial_apply3<distinct_iterator, allocator>::bind_3>();
     }
 
 private:
@@ -110,30 +110,30 @@ private:
         return static_cast<const Self&>(*this);
     }
 
-    template <template <typename, typename, typename> class TransformRange,
+    template <template <typename, typename, typename> class TransformIterator,
               typename Result,
               typename Function>
     auto make_transformation(const Function& function) const noexcept
     {
-        using self_range_type = typename Self::range_type;
+        using self_iterator_type = typename Self::iterator_type;
         using allocator = typename Self::allocator;
         using meta = typename Self::meta;
-        using range_type = TransformRange<self_range_type, Function, meta>;
-        using new_meta = typename range_type::meta;
+        using iterator_type = TransformIterator<self_iterator_type, Function, meta>;
+        using new_meta = typename iterator_type::meta;
 
-        return transformation<Result, Self, Function, range_type, allocator, new_meta>(self(), function, self().get_allocator());
+        return transformation<Result, Self, Function, iterator_type, allocator, new_meta>(self(), function, self().get_allocator());
     }
 
-    template <template <typename, typename> class TransformRange>
+    template <template <typename, typename> class TransformIterator>
     auto make_transformation() const noexcept
     {
-        using self_range_type = typename Self::range_type;
+        using self_iterator_type = typename Self::iterator_type;
         using allocator = typename Self::allocator;
         using meta = typename Self::meta;
-        using range_type = TransformRange<self_range_type, meta>;
-        using new_meta = typename range_type::meta;
+        using iterator_type = TransformIterator<self_iterator_type, meta>;
+        using new_meta = typename iterator_type::meta;
 
-        return independent_transformation<T, Self, range_type, allocator, new_meta>(self(), self().get_allocator());
+        return independent_transformation<T, Self, iterator_type, allocator, new_meta>(self(), self().get_allocator());
     }
 };
 

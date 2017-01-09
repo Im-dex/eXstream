@@ -1,7 +1,7 @@
 #pragma once
 
 #include "stream.hpp"
-#include "range.hpp"
+#include "iterator.hpp"
 #include "detail/traits.hpp"
 #include "meta_info.hpp"
 
@@ -75,11 +75,11 @@ auto stream_of(T&& iterable, const Allocator& alloc = Allocator()) noexcept(deta
             using begin_iterator = decltype(std::begin(ref));
             using end_iterator = decltype(std::end(ref));
             using value_type = decltype(*std::declval<begin_iterator>());
-            using range_type = range<begin_iterator, end_iterator>;
+            using iterator_type = iterator<begin_iterator, end_iterator>;
             using meta = typename detail::stream_of::meta_builder<remove_cvr_t<decltype(iterable)>>::type;
 
             // TODO: move_iterator
-            return stream<value_type, range_type, Allocator, meta>(range_type(std::begin(ref), std::end(ref)), alloc);
+            return stream<value_type, iterator_type, Allocator, meta>(iterator_type(std::begin(ref), std::end(ref)), alloc);
         })
         .else_([](auto, auto) noexcept
         {

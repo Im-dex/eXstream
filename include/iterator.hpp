@@ -9,7 +9,7 @@ CPPSTREAM_RESTORE_ALL_WARNINGS
 namespace cppstream {
 
 template <typename BeginIterator, typename EndIterator>
-class range final
+class iterator final
 {
     static_assert(std::is_default_constructible_v<BeginIterator>, "Begin iterator should be default constructible");
     static_assert(std::is_default_constructible_v<EndIterator>, "End iterator should be default constructible");
@@ -18,33 +18,33 @@ public:
 
     using value_type = decltype(*std::declval<BeginIterator>());
 
-    range() noexcept(std::is_nothrow_default_constructible_v<BeginIterator> && std::is_nothrow_default_constructible_v<EndIterator>)
+    iterator() noexcept(std::is_nothrow_default_constructible_v<BeginIterator> && std::is_nothrow_default_constructible_v<EndIterator>)
         : beginIterator(),
           endIterator()
     {
     }
 
-    range(const BeginIterator& beginIterator, const EndIterator& endIterator) noexcept(std::is_nothrow_copy_constructible_v<BeginIterator> &&
-                                                                                       std::is_nothrow_copy_constructible_v<EndIterator>)
+    iterator(const BeginIterator& beginIterator, const EndIterator& endIterator) noexcept(std::is_nothrow_copy_constructible_v<BeginIterator> &&
+                                                                                          std::is_nothrow_copy_constructible_v<EndIterator>)
         : beginIterator(beginIterator),
           endIterator(endIterator)
     {
     }
 
-    range(BeginIterator&& beginIterator, EndIterator&& endIterator) noexcept(std::is_nothrow_move_constructible_v<BeginIterator> &&
-                                                                             std::is_nothrow_move_constructible_v<EndIterator>)
+    iterator(BeginIterator&& beginIterator, EndIterator&& endIterator) noexcept(std::is_nothrow_move_constructible_v<BeginIterator> &&
+                                                                                std::is_nothrow_move_constructible_v<EndIterator>)
         : beginIterator(std::move(beginIterator)),
           endIterator(std::move(endIterator))
     {
     }
 
-    range(const range&) = default;
-    range(range&&) = default;
+    iterator(const iterator&) = default;
+    iterator(iterator&&) = default;
 
-    range& operator= (const range&) = delete;
-    range& operator= (range&&) = delete;
+    iterator& operator= (const iterator&) = delete;
+    iterator& operator= (iterator&&) = delete;
 
-    bool at_end() const noexcept(is_nothrow_comparable_to_v<const BeginIterator, const EndIterator>)
+    bool at_end() noexcept(is_nothrow_comparable_to_v<const BeginIterator, const EndIterator>)
     {
         return beginIterator == endIterator;
     }

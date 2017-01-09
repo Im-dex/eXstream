@@ -1,5 +1,7 @@
 #pragma once
 
+#include "compare_traits.hpp"
+
 namespace cppstream {
 
 template <bool IsOrdered,
