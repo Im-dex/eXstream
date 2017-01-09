@@ -3,6 +3,7 @@
 #include "stream.hpp"
 #include "range.hpp"
 #include "detail/traits.hpp"
+#include "meta_info.hpp"
 
 namespace cppstream {
 namespace detail {
@@ -35,9 +36,35 @@ struct is_stream_nothrow_constructible<Iterable, true> final
 template <typename Iterable>
 constexpr bool is_stream_nothrow_constructible_v = is_stream_nothrow_constructible<Iterable, is_iterable_v<remove_cvr_t<Iterable>>>::result;
 
+template <typename Traits, bool IsOrdered = false>
+struct order_selector
+{
+    static constexpr Order order = Order::Unknown;
+};
+
+template <typename Traits>
+struct order_selector<Traits, true>
+{
+    static constexpr Order order = Traits::order;
+};
+
+template <typename Iterable>
+class meta_builder final
+{
+    using traits = container_traits<Iterable>;
+public:
+
+    using type = meta_info<
+        traits::is_ordered,
+        traits::is_distinct,
+        order_selector<traits, traits::is_ordered>::order
+    >;
+};
+
 }} // detail::stream_of namespasce
 
-template <typename T, typename Allocator = std::allocator<unsigned char> /* TODO: maybe take from iterable??? */>
+template <typename Allocator = std::allocator<unsigned char> /* TODO: maybe take from iterable??? */,
+          typename T>
 auto stream_of(T&& iterable, const Allocator& alloc = Allocator()) noexcept(detail::stream_of::is_stream_nothrow_constructible_v<T>)
 {
     return constexpr_if<is_iterable_v<remove_cvr_t<T>>>()
@@ -49,9 +76,10 @@ auto stream_of(T&& iterable, const Allocator& alloc = Allocator()) noexcept(deta
             using end_iterator = decltype(std::end(ref));
             using value_type = decltype(*std::declval<begin_iterator>());
             using range_type = range<begin_iterator, end_iterator>;
+            using meta = typename detail::stream_of::meta_builder<remove_cvr_t<decltype(iterable)>>::type;
 
             // TODO: move_iterator
-            return stream<value_type, range_type, Allocator>(range_type(std::begin(ref), std::end(ref)), alloc);
+            return stream<value_type, range_type, Allocator, meta>(range_type(std::begin(ref), std::end(ref)), alloc);
         })
         .else_([](auto, auto) noexcept
         {

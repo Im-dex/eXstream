@@ -2,6 +2,7 @@
 
 #include "transform_range.hpp"
 #include "option.hpp"
+#include "meta_info.hpp"
 
 namespace cppstream {
 namespace detail {
@@ -46,6 +47,7 @@ constexpr bool is_nothrow_function_call() noexcept
 
 template <typename Range,
           typename Function,
+          typename Meta,
           typename Allocator>
 class flat_map_range final : public transform_range<Range>
 {
@@ -55,6 +57,7 @@ class flat_map_range final : public transform_range<Range>
 public:
 
     using value_type = decltype(*std::declval<stream_begin_iterator>());
+    using meta = meta_info<false, false, Order::Unknown>;
 
     explicit flat_map_range(const Range& range, const Function& function, const Allocator& alloc) noexcept(std::is_nothrow_copy_constructible_v<Range> &&
                                                                                                            std::is_nothrow_default_constructible_v<stream_begin_iterator>)
@@ -82,9 +85,9 @@ public:
     flat_map_range& operator= (const flat_map_range&) = delete;
     flat_map_range& operator= (flat_map_range&&) = delete;
 
-    bool at_end() const noexcept(noexcept(std::declval<const Range>().at_end()) &&
-                                 noexcept(std::end(std::declval<stream_t>()))   &&
-                                 is_nothrow_comparable_to_v<stream_begin_iterator, stream_end_iterator>)
+    bool at_end() /*TODO: const*/ noexcept(noexcept(std::declval<const Range>().at_end()) &&
+                                           noexcept(std::end(std::declval<stream_t>()))   &&
+                                           is_nothrow_comparable_to_v<stream_begin_iterator, stream_end_iterator>)
     {
         return range.at_end() && (stream.empty() || (streamIterator == std::end(stream.get())));
     }

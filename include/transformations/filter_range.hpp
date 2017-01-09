@@ -16,12 +16,15 @@ constexpr bool is_nothrow_synchronize()
 
 }} // detail::filter namespace
 
-template <typename Range, typename Function>
+template <typename Range,
+          typename Function,
+          typename Meta>
 class filter_range final : public transform_range<Range>
 {
 public:
 
     using value_type = typename Range::value_type;
+    using meta = Meta;
 
     template <typename Allocator>
     filter_range(const Range& range, const Function& function, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Range>)
@@ -45,7 +48,7 @@ public:
     filter_range& operator= (const filter_range&) = delete;
     filter_range& operator= (filter_range&&) = delete;
 
-    bool at_end() noexcept(detail::filter::is_nothrow_synchronize<Range, Function>())
+    bool at_end() /*TODO: const*/ noexcept(detail::filter::is_nothrow_synchronize<Range, Function>())
     {
         synchronize();
         return range.at_end();

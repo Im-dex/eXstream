@@ -4,12 +4,15 @@
 
 namespace cppstream {
 
-template <typename Range, typename Function>
+template <typename Range,
+          typename Function,
+          typename Meta>
 class map_range final : public transform_range<Range>
 {
 public:
 
     using value_type = std::result_of_t<const Function&(typename Range::value_type)>;
+    using meta = Meta;
 
     template <typename Allocator>
     explicit map_range(const Range& range, const Function& function, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Range>)
@@ -31,7 +34,7 @@ public:
     map_range& operator= (const map_range&) = delete;
     map_range& operator= (map_range&&) = delete;
 
-    bool at_end() const noexcept(noexcept(std::declval<const Range>().at_end()))
+    bool at_end() /*TODO: const*/ noexcept(noexcept(std::declval<const Range>().at_end()))
     {
         return range.at_end();
     }

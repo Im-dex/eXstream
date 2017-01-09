@@ -107,7 +107,21 @@ TEST(TEST_CASE_NAME, is_forward_iterator_Test)
 {
     EXPECT_TRUE(is_forward_iterator_v<int*>);
     EXPECT_TRUE(is_forward_iterator_v<std::string::iterator>);
+    EXPECT_TRUE(is_forward_iterator_v<std::list<int>::iterator>);
     EXPECT_TRUE(is_forward_iterator_v<std::set<int>::reverse_iterator>);
+
+    EXPECT_FALSE(is_forward_iterator_v<int>);
+}
+
+TEST(TEST_CASE_NAME, is_random_access_iterator_Test)
+{
+    EXPECT_TRUE(is_random_access_iterator_v<int*>);
+    EXPECT_TRUE(is_random_access_iterator_v<std::string::iterator>);
+    EXPECT_TRUE(is_random_access_iterator_v<std::vector<int>::iterator>);
+
+    EXPECT_FALSE(is_random_access_iterator_v<int>);
+    EXPECT_FALSE(is_random_access_iterator_v<std::list<int>>);
+    EXPECT_FALSE(is_random_access_iterator_v<std::forward_list<int>>);
 }
 
 TEST(TEST_CASE_NAME, is_const_iterator_Test)

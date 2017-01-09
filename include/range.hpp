@@ -8,8 +8,7 @@ CPPSTREAM_RESTORE_ALL_WARNINGS
 
 namespace cppstream {
 
-template <typename BeginIterator,
-          typename EndIterator>
+template <typename BeginIterator, typename EndIterator>
 class range final
 {
     static_assert(std::is_default_constructible_v<BeginIterator>, "Begin iterator should be default constructible");

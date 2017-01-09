@@ -7,13 +7,15 @@ namespace cppstream {
 
 template <typename T,
           typename Range,
-          typename Allocator>
-class stream final : public with_transformations<T, stream<T, Range, Allocator>>
+          typename Allocator,
+          typename Meta>
+class stream final : public with_transformations<T, stream<T, Range, Allocator, Meta>>
 {
 public:
 
     using range_type = Range;
     using allocator = Allocator;
+    using meta = Meta;
 
     explicit stream(Range&& range, const Allocator& alloc) noexcept(std::is_nothrow_move_constructible_v<Range> &&
                                                                     std::is_nothrow_copy_constructible_v<Allocator>)

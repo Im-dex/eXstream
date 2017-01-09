@@ -45,23 +45,28 @@ constexpr bool is_iterator_v = is_iterator<T>::value;
 
 namespace detail {
 
-template <bool IsIterator, typename T>
-struct is_forward_iterator : public std::false_type
-{
-};
+template <typename T, typename Tag, bool IsIterator = false>
+struct is_iterator_with_tag_impl : public std::false_type {};
 
-template <typename T>
-struct is_forward_iterator<true, T> : public std::is_base_of<std::forward_iterator_tag, typename std::iterator_traits<T>::iterator_category>
-{
-};
+template <typename T, typename Tag>
+struct is_iterator_with_tag_impl<T, Tag, true> : public std::is_base_of<Tag, typename std::iterator_traits<T>::iterator_category> {};
+
+template <typename T, typename Tag>
+using is_iterator_with_tag = is_iterator_with_tag_impl<T, Tag, is_iterator_v<T>>;
 
 } // detail namespace
 
 template <typename T>
-using is_forward_iterator = detail::is_forward_iterator<is_iterator_v<T>, T>;
+using is_forward_iterator = detail::is_iterator_with_tag<T, std::forward_iterator_tag>;
 
 template <typename T>
 constexpr bool is_forward_iterator_v = is_forward_iterator<T>::value;
+
+template <typename T>
+using is_random_access_iterator = detail::is_iterator_with_tag<T, std::random_access_iterator_tag>;
+
+template <typename T>
+constexpr bool is_random_access_iterator_v = is_random_access_iterator<T>::value;
 
 namespace detail {
 
@@ -90,7 +95,7 @@ struct is_iterable
 {
     template <typename U1, typename U2>
     static auto check(U1& x, const U2& y) -> decltype(std::conjunction<
-        cppstream::is_forward_iterator<decltype(std::begin(x))>,
+        cppstream::is_forward_iterator<decltype(std::begin(x))>, // TODO: relax to InputIterator???
         cppstream::is_forward_iterator<decltype(std::end(x))>,
         cppstream::is_forward_iterator<decltype(std::begin(y))>,
         cppstream::is_forward_iterator<decltype(std::end(y))>
@@ -106,7 +111,7 @@ struct is_reverse_iterable
 {
     template <typename U1, typename U2>
     static auto check(U1& x, const U2& y) -> decltype(std::conjunction<
-        cppstream::is_forward_iterator<decltype(std::rbegin(x))>,
+        cppstream::is_forward_iterator<decltype(std::rbegin(x))>, // TODO: relax to InputIterator???
         cppstream::is_forward_iterator<decltype(std::rend(x))>,
         cppstream::is_forward_iterator<decltype(std::rbegin(y))>,
         cppstream::is_forward_iterator<decltype(std::rend(y))>

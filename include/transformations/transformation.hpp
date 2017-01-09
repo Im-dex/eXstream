@@ -8,6 +8,7 @@ template <typename T,
           typename Source,
           typename TransformRange,
           typename Allocator,
+          typename Meta,
           typename Self>
 class base_transformation : public with_transformations<T, Self>
 {
@@ -15,6 +16,7 @@ public:
 
     using range_type = TransformRange;
     using allocator = Allocator;
+    using meta = Meta;
 
     const Allocator& get_allocator() const noexcept
     {
@@ -45,8 +47,9 @@ template <typename T,
           typename Source,
           typename Function,
           typename TransformRange,
-          typename Allocator>
-class transformation : public base_transformation<T, Source, TransformRange, Allocator, transformation<T, Source, Function, TransformRange, Allocator>>
+          typename Allocator,
+          typename Meta>
+class transformation : public base_transformation<T, Source, TransformRange, Allocator, Meta, transformation<T, Source, Function, TransformRange, Allocator, Meta>>
 {
     using source_range = decltype(std::declval<const Source>().get_range());
     static_assert(std::is_constructible_v<TransformRange, source_range, const Function&, const Allocator&>, "Invalid TransformRange");
@@ -77,8 +80,9 @@ private:
 template <typename T,
           typename Source,
           typename TransformRange,
-          typename Allocator>
-class independent_transformation : public base_transformation<T, Source, TransformRange, Allocator, independent_transformation<T, Source, TransformRange, Allocator>>
+          typename Allocator,
+          typename Meta>
+class independent_transformation : public base_transformation<T, Source, TransformRange, Allocator, Meta, independent_transformation<T, Source, TransformRange, Allocator, Meta>>
 {
 public:
 
