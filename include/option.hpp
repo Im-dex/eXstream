@@ -1,7 +1,7 @@
 #pragma once
 
 #include "utility.hpp"
-#include "ordering_traits.hpp"
+#include "container_traits.hpp"
 #include "detail/type_traits.hpp"
 #include "not_null.hpp"
 
@@ -1241,9 +1241,11 @@ option<T> make_option(Ts&&... args) noexcept(std::is_nothrow_constructible_v<T, 
 }
 
 template <typename T>
-struct ordering_traits<option<T>>
+struct container_traits<option<T>>
 {
     static constexpr bool is_ordered = true;
+    static constexpr Order order = Order::Ascending;
+    static constexpr bool is_distinct = true;
 };
 
 } // cppstream namespace

@@ -4,6 +4,8 @@
 
 CPPSTREAM_SUPPRESS_ALL_WARNINGS
 #include <forward_list>
+#include <unordered_map>
+#include <unordered_set>
 CPPSTREAM_RESTORE_ALL_WARNINGS
 
 using namespace cppstream;
@@ -12,56 +14,84 @@ using namespace cppstream;
 
 TEST(TEST_CASE_NAME, is_sizable_Test)
 {
-    struct Sizable
+    struct sizable
     {
         std::size_t size() const { return 1; }
     };
 
-    struct NonConstSizable
+    struct non_const_sizable
     {
         std::size_t size() { return 1; }
     };
 
-    struct NonIntegerSizable
+    struct non_integer_sizable
     {
         float size() { return 1.0f; }
     };
 
     EXPECT_TRUE(is_sizable_v<std::string>);
     EXPECT_TRUE(is_sizable_v<std::vector<int>>);
-    EXPECT_TRUE(is_sizable_v<Sizable>);
+    EXPECT_TRUE(is_sizable_v<sizable>);
 
-    EXPECT_FALSE(is_sizable_v<NonConstSizable>);
+    EXPECT_FALSE(is_sizable_v<non_const_sizable>);
     EXPECT_FALSE(is_sizable_v<int>);
-    EXPECT_FALSE(is_sizable_v<NonIntegerSizable>);
+    EXPECT_FALSE(is_sizable_v<non_integer_sizable>);
 }
 
-struct MyOrdered
+struct my_ordered
+{
+};
+
+struct my_distinct
 {
 };
 
 namespace cppstream {
 
 template <>
-struct ordering_traits<MyOrdered>
+struct container_traits<my_ordered>
 {
     static constexpr bool is_ordered = true;
+    static constexpr Order order = Order::Ascending;
+};
+
+template <>
+struct container_traits<my_distinct>
+{
+    static constexpr bool is_ordered = false;
+    static constexpr bool is_distinct = true;
 };
 
 } // cppstream namespace
 
 TEST(TEST_CASE_NAME, is_ordered_Test)
 {
-    struct NonOrdered {};
+    struct unordered {};
 
     EXPECT_TRUE((is_ordered_v<std::map<int, int>>));
     EXPECT_TRUE((is_ordered_v<std::set<int, float>>));
-    EXPECT_TRUE(is_ordered_v<MyOrdered>);
+    EXPECT_TRUE(is_ordered_v<my_ordered>);
 
     EXPECT_FALSE(is_ordered_v<int>);
     EXPECT_FALSE(is_ordered_v<std::string>);
     EXPECT_FALSE(is_ordered_v<std::vector<float>>);
-    EXPECT_FALSE(is_ordered_v<NonOrdered>);
+    EXPECT_FALSE(is_ordered_v<unordered>);
+}
+
+TEST(TEST_CASE_NAME, is_distinct_Test)
+{
+    struct non_distinct {};
+
+    EXPECT_TRUE((is_distinct_v<std::unordered_map<int, int>>));
+    EXPECT_TRUE((is_distinct_v<std::unordered_set<int, int>>));
+    EXPECT_TRUE((is_distinct_v<std::map<int, int>>));
+    EXPECT_TRUE((is_distinct_v<std::set<int, int>>));
+    EXPECT_TRUE((is_distinct_v<my_distinct>));
+
+    EXPECT_FALSE((is_distinct_v<int>));
+    EXPECT_FALSE((is_distinct_v<std::string>));
+    EXPECT_FALSE((is_distinct_v<std::multimap<int, int>>));
+    EXPECT_FALSE((is_distinct_v<non_distinct>));
 }
 
 TEST(TEST_CASE_NAME, is_iterator_Test)

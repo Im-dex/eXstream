@@ -1,7 +1,7 @@
 #pragma once
 
 #include "type_traits.hpp"
-#include "ordering_traits.hpp"
+#include "container_traits.hpp"
 
 CPPSTREAM_SUPPRESS_ALL_WARNINGS
 #include <iterator>
@@ -141,10 +141,16 @@ template <typename T>
 constexpr bool is_sizable_v = is_sizable<T>::value;
 
 template <typename T>
-using is_ordered = std::bool_constant<ordering_traits<T>::is_ordered>;
+using is_ordered = std::bool_constant<container_traits<T>::is_ordered>;
 
 template <typename T>
-constexpr bool is_ordered_v = ordering_traits<T>::is_ordered;
+constexpr bool is_ordered_v = container_traits<T>::is_ordered;
+
+template <typename T>
+using is_distinct = std::bool_constant<container_traits<T>::is_distinct>;
+
+template <typename T>
+constexpr bool is_distinct_v = container_traits<T>::is_distinct;
 
 template <typename T>
 using value_type = std::conditional_t<

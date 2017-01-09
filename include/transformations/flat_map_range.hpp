@@ -108,19 +108,21 @@ public:
     // TODO: value_type<std::remove_reference_t<T>>
     value_type get_value() noexcept(detail::flat_map::is_nothrow_function_call<Function, Range>() &&
                                     noexcept(std::begin(std::declval<stream_t>()))                &&
-                                    noexcept(*std::declval<stream_begin_iterator>())) // TODO: stream_t noexcept
+                                    noexcept(*std::declval<stream_begin_iterator>())) // TODO: stream_t noexcept + emplace or assign noexcept
     {
         if (stream.empty())
         {
+            auto&& value = function(range.get_value());
+
             constexpr_if<is_allocator_used::value>()
-                .then([&](auto) // TODO: noexcept
+                .then([&](auto) noexcept(noexcept(std::declval<option<stream_t>>().emplace(std::declval<decltype(value)>(), std::declval<const Allocator&>())))
                 {
-                    stream.emplace(function(range.get_value()), allocHolder.alloc);
+                    stream.emplace(std::forward<decltype(value)>(value), allocHolder.alloc);
                 })
-                .else_([&](auto) // TODO: noexcept
+                .else_([&](auto) noexcept(std::is_nothrow_assignable_v<option<stream_t>, decltype(value)>)
                 {
-                    stream = function(range.get_value());
-                })(nothing);
+                    stream = std::forward<decltype(value)>(value);
+                })();
 
             streamIterator = std::begin(stream.get());
         }
