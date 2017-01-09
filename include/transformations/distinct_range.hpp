@@ -182,7 +182,7 @@ public:
     bool at_end() /*TODO: const*/ noexcept(detail::distinct::is_nothrow_find_next<Range>())
     {
         find_next();
-        return range.at_end();
+        return range.at_end() && value.empty();
     }
 
     void advance() noexcept(std::is_nothrow_destructible_v<value_type>)
