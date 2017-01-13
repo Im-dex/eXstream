@@ -3,7 +3,7 @@
 #include "transform_iterator.hpp"
 #include "detail/result_traits.hpp"
 
-namespace cppstream {
+namespace exstream {
 
 template <typename Iterator,
           typename Function,
@@ -58,4 +58,4 @@ private:
     const Function& function;
 };
 
-} // cppstream namespace
+} // exstream namespace

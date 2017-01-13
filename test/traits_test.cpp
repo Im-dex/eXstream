@@ -2,13 +2,13 @@
 
 #include "detail/traits.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <forward_list>
 #include <unordered_map>
 #include <unordered_set>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-using namespace cppstream;
+using namespace exstream;
 
 #define TEST_CASE_NAME TraitsTest
 
@@ -46,7 +46,7 @@ struct my_distinct
 {
 };
 
-namespace cppstream {
+namespace exstream {
 
 template <>
 struct container_traits<my_ordered>
@@ -62,7 +62,7 @@ struct container_traits<my_distinct>
     static constexpr bool is_distinct = true;
 };
 
-} // cppstream namespace
+} // exstream namespace
 
 TEST(TEST_CASE_NAME, is_ordered_Test)
 {

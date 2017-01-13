@@ -1,9 +1,9 @@
 #pragma once
 
 #include "constexpr_if.hpp"
-#include "detail/type_traits.hpp"
+#include "type_traits.hpp"
 
-namespace cppstream {
+namespace exstream {
 
 template <typename Signature>
 class function_view;
@@ -49,4 +49,4 @@ private:
     Ret(*caller)(void*, Args...);
 };
 
-} // cppstream namespace
+} // exstream namespace

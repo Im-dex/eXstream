@@ -3,11 +3,11 @@
 #include "option.hpp"
 #include "detail/type_list.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <exception>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-namespace cppstream {
+namespace exstream {
 
 constexpr size_t variant_npos = size_t(-1);
 
@@ -21,7 +21,7 @@ struct variant_helper;
 template<typename T, typename... Ts>
 struct variant_helper<T, Ts...> final
 {
-    CPPSTREAM_FORCEINLINE
+    EXSTREAM_FORCEINLINE
     static void destroy(const size_t index, void* ptr) noexcept(std::is_nothrow_destructible_v<T> && std::conjunction_v<std::is_nothrow_destructible<Ts>...>)
     {
         if (index == sizeof...(Ts))
@@ -34,7 +34,7 @@ struct variant_helper<T, Ts...> final
         }
     }
 
-    CPPSTREAM_FORCEINLINE
+    EXSTREAM_FORCEINLINE
     static void copy(const size_t index, const void* from, void* to) noexcept(std::is_nothrow_copy_constructible_v<T> && std::conjunction_v<std::is_nothrow_copy_constructible<Ts>...>)
     {
         if (index == sizeof...(Ts))
@@ -47,7 +47,7 @@ struct variant_helper<T, Ts...> final
         }
     }
 
-    CPPSTREAM_FORCEINLINE
+    EXSTREAM_FORCEINLINE
     static void move(const size_t index, void* from, void* to) noexcept(std::is_nothrow_move_constructible_v<T> && std::conjunction_v<std::is_nothrow_move_constructible<Ts>...>)
     {
         if (index == sizeof...(Ts))
@@ -60,7 +60,7 @@ struct variant_helper<T, Ts...> final
         }
     }
 
-    CPPSTREAM_FORCEINLINE
+    EXSTREAM_FORCEINLINE
     static void assign(const size_t index, const void* from, void* to) noexcept
     {
         if (index == sizeof...(Ts))
@@ -73,7 +73,7 @@ struct variant_helper<T, Ts...> final
         }
     }
 
-    CPPSTREAM_FORCEINLINE
+    EXSTREAM_FORCEINLINE
     static void move_assign(const size_t index, void* from, void* to) noexcept
     {
         if (index == sizeof...(Ts))
@@ -86,7 +86,7 @@ struct variant_helper<T, Ts...> final
         }
     }
 
-    CPPSTREAM_FORCEINLINE
+    EXSTREAM_FORCEINLINE
     static void swap(const size_t index, void* lhs, void* rhs) noexcept(std::is_nothrow_swappable_v<T>)
     {
         if (index == sizeof...(Ts))
@@ -100,7 +100,7 @@ struct variant_helper<T, Ts...> final
         }
     }
 
-    CPPSTREAM_FORCEINLINE
+    EXSTREAM_FORCEINLINE
     static size_t hash(const size_t index, const void* ptr) noexcept
     {
         if (index == sizeof...(Ts))
@@ -110,7 +110,7 @@ struct variant_helper<T, Ts...> final
     }
 
     template <typename Result, typename Function>
-    CPPSTREAM_FORCEINLINE static Result invoke(const size_t index, void* ptr, Function&& function)
+    EXSTREAM_FORCEINLINE static Result invoke(const size_t index, void* ptr, Function&& function)
         noexcept(noexcept(std::declval<Function>()(std::declval<T&>())))
     {
         if (index == sizeof...(Ts))
@@ -120,7 +120,7 @@ struct variant_helper<T, Ts...> final
     }
 
     template <typename Result, typename Function>
-    CPPSTREAM_FORCEINLINE static Result invoke(const size_t index, const void* ptr, Function&& function)
+    EXSTREAM_FORCEINLINE static Result invoke(const size_t index, const void* ptr, Function&& function)
         noexcept(noexcept(std::declval<Function>()(std::declval<const T&>())))
     {
         if (index == sizeof...(Ts))
@@ -130,7 +130,7 @@ struct variant_helper<T, Ts...> final
     }
 
     template <typename Result, typename Function>
-    CPPSTREAM_FORCEINLINE static Result invoke_on_rvalue(const size_t index, void* ptr, Function&& function)
+    EXSTREAM_FORCEINLINE static Result invoke_on_rvalue(const size_t index, void* ptr, Function&& function)
         noexcept(noexcept(std::declval<Function>()(std::declval<T&&>())))
     {
         if (index == sizeof...(Ts))
@@ -172,7 +172,7 @@ struct variant_helper<> final
         return size_t(0);
     }
 
-    CPPSTREAM_MSVC_SUPPRESS_WARNINGS_PUSH(4297)
+    EXSTREAM_MSVC_SUPPRESS_WARNINGS_PUSH(4297)
 
     // NOTE: invoke* functions throws an exception and marked as noexcept due to that functions has never called
 
@@ -194,7 +194,7 @@ struct variant_helper<> final
         throw bad_variant_access();
     }
 
-    CPPSTREAM_MSVC_WARNINGS_POP
+    EXSTREAM_MSVC_WARNINGS_POP
 };
 
 template <typename Function, typename T>
@@ -208,7 +208,7 @@ constexpr bool is_nothrow_match_function_call() noexcept
 
 } // detail namespaces
 
-CPPSTREAM_MSVC_SUPPRESS_WARNINGS_PUSH(4521 4522)
+EXSTREAM_MSVC_SUPPRESS_WARNINGS_PUSH(4521 4522)
 
 template <typename... Ts>
 class variant final
@@ -252,14 +252,14 @@ public:
             .then([this](auto type) noexcept(std::is_nothrow_default_constructible_v<remove_cvr_t<decltype(type)>::type>)
             {
                 construct<remove_cvr_t<decltype(type)>::type>();
-                CPPSTREAM_UNUSED(type);
+                EXSTREAM_UNUSED(type);
             })
             .else_([](auto type) noexcept
             {
                 using value_type = remove_cvr_t<decltype(type)::type>;
                 static_assert(contains_v<types, value_type>, "Invalid variant type");
                 static_assert(std::is_default_constructible_v<value_type>, "Type isn't default constructible");
-                CPPSTREAM_UNUSED(type);
+                EXSTREAM_UNUSED(type);
             })(type);
     }
 
@@ -283,7 +283,7 @@ public:
                 using val_type = remove_cvr_t<decltype(value)>;
                 static_assert(contains_v<types, val_type>, "Invalid variant type");
                 static_assert(std::is_constructible_v<val_type, decltype(value)>, "Type isn't copy or move constructible");
-                CPPSTREAM_UNUSED(value);
+                EXSTREAM_UNUSED(value);
             })(std::forward<T>(value));
     }
 
@@ -300,14 +300,14 @@ public:
             {
                 using value_type = remove_cvr_t<decltype(type)>::type;
                 construct<value_type>(std::forward<decltype(args)>(args)...);
-                CPPSTREAM_UNUSED(type);
+                EXSTREAM_UNUSED(type);
             })
             .else_([](auto type, auto&&... args) noexcept
             {
                 using value_type = remove_cvr_t<decltype(type)>::type;
                 static_assert(contains_v<types, value_type>, "Invalid variant type");
                 static_assert(std::is_constructible_v<value_type, decltype(args)...>, "Invalid type constructor arguments");
-                CPPSTREAM_UNUSED(type);
+                EXSTREAM_UNUSED(type);
             })(type, std::forward<Args>(args)...);
     }
 
@@ -396,7 +396,7 @@ public:
                 static_assert(contains_v<types, val_type>, "Invalid variant type");
                 static_assert(std::is_assignable_v<val_type&, that_reference>, "Type isn't assignable");
                 static_assert(std::is_constructible_v<val_type, that_reference>, "Type isn't copy constructible");
-                CPPSTREAM_UNUSED(that);
+                EXSTREAM_UNUSED(that);
             })(std::forward<T>(that));
 
         return *this;
@@ -471,14 +471,14 @@ public:
                     index_ = index_of_v<types, type_t>;
                 });
 
-                CPPSTREAM_UNUSED(type);
+                EXSTREAM_UNUSED(type);
             })
             .else_([](auto type, auto&&... args) noexcept
             {
                 using type_t = std::remove_reference_t<decltype(type)>::type;
                 static_assert(contains_v<types, type_t>, "Invalid variant type");
                 static_assert(std::is_constructible_v<type_t, decltype(args)...>, "Invalid type constructor arguments");
-                CPPSTREAM_UNUSED(type);
+                EXSTREAM_UNUSED(type);
             })(type_t<T>(), std::forward<Args>(arguments)...);
     }
 
@@ -787,7 +787,7 @@ private:
     size_t index_;
 };
 
-CPPSTREAM_MSVC_WARNINGS_POP
+EXSTREAM_MSVC_WARNINGS_POP
 
 template <typename... Ts>
 void swap(variant<Ts...>& lhs, variant<Ts...>& rhs) noexcept(noexcept(variant<Ts...>::swap(lhs, rhs)))
@@ -795,14 +795,14 @@ void swap(variant<Ts...>& lhs, variant<Ts...>& rhs) noexcept(noexcept(variant<Ts
     variant<Ts...>::swap(lhs, rhs);
 }
 
-} // cppstream namespace
+} // exstream namespace
 
 namespace std {
 
 template <typename... Ts>
-struct hash<cppstream::variant<Ts...>>
+struct hash<exstream::variant<Ts...>>
 {
-    size_t operator() (const cppstream::variant<Ts...>& value) const noexcept
+    size_t operator() (const exstream::variant<Ts...>& value) const noexcept
     {
         return value.hash();
     }

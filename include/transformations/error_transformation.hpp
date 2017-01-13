@@ -1,6 +1,6 @@
 #pragma once
 
-namespace cppstream {
+namespace exstream {
 
 struct error_transformation final
 {
@@ -28,4 +28,4 @@ struct error_transformation final
     }
 };
 
-} // cppstream namespace
+} // exstream namespace

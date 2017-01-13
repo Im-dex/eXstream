@@ -4,7 +4,7 @@
 #include "option.hpp"
 #include "meta_info.hpp"
 
-namespace cppstream {
+namespace exstream {
 namespace detail {
 namespace flat_map {
 
@@ -204,4 +204,4 @@ private:
     const Function& function;
 };
 
-} // cppstream namespace
+} // exstream namespace

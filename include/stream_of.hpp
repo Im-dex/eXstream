@@ -5,7 +5,7 @@
 #include "detail/traits.hpp"
 #include "meta_info.hpp"
 
-namespace cppstream {
+namespace exstream {
 namespace stream_of_detail {
 
 template <typename Traits, bool IsOrdered = false>
@@ -100,4 +100,4 @@ auto stream_of(T&& iterable, const Allocator& alloc = Allocator()) noexcept(stre
         })(std::forward<T>(iterable), alloc);
 }
 
-} // cppstream namespace
+} // exstream namespace

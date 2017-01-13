@@ -2,7 +2,7 @@
 
 #include "detail/scope_guard.hpp"
 
-using namespace cppstream;
+using namespace exstream;
 using namespace testing;
 
 #define TEST_CASE_NAME ScopeGuardTest
@@ -23,11 +23,11 @@ TEST(TEST_CASE_NAME, scope_exit_Test)
     EXPECT_CALL(mock, expected()).Times(Exactly(2));
 
     {
-        CPPSTREAM_SCOPE_EXIT { mock.expected(); };
+        EXSTREAM_SCOPE_EXIT { mock.expected(); };
     }
 
     EXPECT_ANY_THROW(
-        CPPSTREAM_SCOPE_EXIT{ mock.expected(); };
+        EXSTREAM_SCOPE_EXIT{ mock.expected(); };
         throw 0;
     );
 }
@@ -39,11 +39,11 @@ TEST(TEST_CASE_NAME, scope_success_Test)
     EXPECT_CALL(mock, unexpected()).Times(Exactly(0));
 
     {
-        CPPSTREAM_SCOPE_SUCCESS { mock.expected(); };
+        EXSTREAM_SCOPE_SUCCESS { mock.expected(); };
     }
 
     EXPECT_ANY_THROW(
-        CPPSTREAM_SCOPE_SUCCESS{ mock.unexpected(); };
+        EXSTREAM_SCOPE_SUCCESS{ mock.unexpected(); };
         throw 0;
     );
 }
@@ -55,20 +55,20 @@ TEST(TEST_CASE_NAME, scope_fail_Test)
     EXPECT_CALL(mock, unexpected()).Times(Exactly(0));
 
     {
-        CPPSTREAM_SCOPE_FAIL{ mock.unexpected(); };
+        EXSTREAM_SCOPE_FAIL{ mock.unexpected(); };
     }
 
     EXPECT_ANY_THROW(
-        CPPSTREAM_SCOPE_FAIL{ mock.expected(); };
+        EXSTREAM_SCOPE_FAIL{ mock.expected(); };
         throw 0;
     );
 
-    CPPSTREAM_MSVC_SUPPRESS_WARNINGS_PUSH(4297)
+    EXSTREAM_MSVC_SUPPRESS_WARNINGS_PUSH(4297)
 
     EXPECT_ANY_DEATH(
-        CPPSTREAM_SCOPE_FAIL{ throw 1; };
+        EXSTREAM_SCOPE_FAIL{ throw 1; };
         throw 0;
     );
 
-    CPPSTREAM_MSVC_WARNINGS_POP
+    EXSTREAM_MSVC_WARNINGS_POP
 }

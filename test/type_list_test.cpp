@@ -2,7 +2,7 @@
 
 #include "detail/type_list.hpp"
 
-using namespace cppstream;
+using namespace exstream;
 using namespace testing;
 
 #define TEST_CASE_NAME TypeListTest

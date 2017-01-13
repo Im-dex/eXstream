@@ -4,16 +4,16 @@
 #include "uncaught_exceptions_counter.hpp"
 #include "constexpr_if.hpp"
 
-#define CPPSTREAM_SCOPE_EXIT\
-    const auto CPPSTREAM_ANONYMOUS_VAR(scope_exit) = cppstream::ScopeExit() + [&]()
+#define EXSTREAM_SCOPE_EXIT\
+    const auto EXSTREAM_ANONYMOUS_VAR(scope_exit) = ::exstream::ScopeExit() + [&]()
 
-#define CPPSTREAM_SCOPE_SUCCESS\
-    const auto CPPSTREAM_ANONYMOUS_VAR(scope_success) = cppstream::ScopeSuccess() + [&]()
+#define EXSTREAM_SCOPE_SUCCESS\
+    const auto EXSTREAM_ANONYMOUS_VAR(scope_success) = ::exstream::ScopeSuccess() + [&]()
 
-#define CPPSTREAM_SCOPE_FAIL\
-    const auto CPPSTREAM_ANONYMOUS_VAR(scope_fail) = cppstream::ScopeFailure() + [&]() noexcept
+#define EXSTREAM_SCOPE_FAIL\
+    const auto EXSTREAM_ANONYMOUS_VAR(scope_fail) = ::exstream::ScopeFailure() + [&]() noexcept
 
-namespace cppstream {
+namespace exstream {
 
 enum class ScopeExit;
 enum class ScopeSuccess;
@@ -123,4 +123,4 @@ scope_guard_for_new_excepotion<std::decay_t<Function>, false> operator+ (ScopeSu
     return scope_guard_for_new_excepotion<std::decay_t<Function>, false>(std::forward<Function>(function));
 }
 
-} // cppstream namespace
+} // exstream namespace

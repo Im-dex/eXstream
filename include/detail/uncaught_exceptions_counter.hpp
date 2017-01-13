@@ -2,11 +2,11 @@
 
 #include "config.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <exception>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-namespace cppstream {
+namespace exstream {
 
 class uncaught_exceptions_counter final
 {
@@ -38,4 +38,4 @@ private:
     int counter;
 };
 
-} // cppstream namespaces
+} // exstream namespaces

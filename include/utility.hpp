@@ -1,6 +1,6 @@
 #pragma once
 
-namespace cppstream {
+namespace exstream {
 
 struct in_place_t final {};
 constexpr auto in_place = in_place_t();
@@ -28,4 +28,4 @@ struct type_t final
 /*template <typename T>
 constexpr type_t<T> type = type_t<T>();*/
 
-} // cppstream namespace
+} // exstream namespace

@@ -2,9 +2,9 @@
 
 #include "config.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <cassert>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
 namespace std {
 
@@ -19,42 +19,7 @@ class weak_ptr;
 
 } // std namespace
 
-namespace cppstream {
-
-/*template <typename T>
-struct not_null_traits
-{
-    static constexpr bool exists = false;
-};
-
-template <typename T>
-struct not_null_traits<T*>
-{
-    static constexpr bool exists = true;
-    static constexpr T* get(T* pointer) noexcept { return pointer; }
-};
-
-template <typename T, typename Deleter>
-struct not_null_traits<std::unique_ptr<T, Deleter>>
-{
-private:
-    using pointer_t = std::unique_ptr<T, Deleter>;
-public:
-
-    static constexpr bool exists = true;
-    static typename pointer_t::pointer get(const pointer_t& pointer) noexcept { return pointer.get(); }
-};
-
-template <typename T>
-struct not_null_traits<std::shared_ptr<T>>
-{
-private:
-    using pointer_t = std::shared_ptr<T>;
-public:
-
-    static constexpr bool exists = true;
-    static typename pointer_t::pointer get(const pointer_t& pointer) noexcept { return pointer.get(); }
-};*/
+namespace exstream {
 
 template <typename T>
 class not_null;
@@ -602,56 +567,54 @@ private:
     smart_pointer ptr;
 };
 
-} // cppstream namespace
-
 #pragma region comparison
 
 // raw pointer
 
 template <typename T>
-bool operator== (const T* a, const cppstream::not_null<T*>& b) noexcept
+bool operator== (const T* a, const not_null<T*>& b) noexcept
 {
     return b == a;
 }
 
 template <typename T>
-bool operator!= (const T* a, const cppstream::not_null<T*>& b) noexcept
+bool operator!= (const T* a, const not_null<T*>& b) noexcept
 {
     return b != a;
 }
 
 template <typename T>
-bool operator> (const T* a, const cppstream::not_null<T*>& b) noexcept
+bool operator> (const T* a, const not_null<T*>& b) noexcept
 {
     return b < a;
 }
 
 template <typename T>
-bool operator>= (const T* a, const cppstream::not_null<T*>& b) noexcept
+bool operator>= (const T* a, const not_null<T*>& b) noexcept
 {
     return b <= a;
 }
 
 template <typename T>
-bool operator< (const T* a, const cppstream::not_null<T*>& b) noexcept
+bool operator< (const T* a, const not_null<T*>& b) noexcept
 {
     return b > a;
 }
 
 template <typename T>
-bool operator<= (const T* a, const cppstream::not_null<T*>& b) noexcept
+bool operator<= (const T* a, const not_null<T*>& b) noexcept
 {
     return b >= a;
 }
 
 template <typename T>
-bool operator== (nullptr_t, const cppstream::not_null<T*>&) noexcept
+bool operator== (nullptr_t, const not_null<T*>&) noexcept
 {
     return false;
 }
 
 template <typename T>
-bool operator!= (nullptr_t, const cppstream::not_null<T*>&) noexcept
+bool operator!= (nullptr_t, const not_null<T*>&) noexcept
 {
     return true;
 }
@@ -659,85 +622,85 @@ bool operator!= (nullptr_t, const cppstream::not_null<T*>&) noexcept
 // unique pointer
 
 template <typename T, typename Deleter>
-bool operator== (const T* a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator== (const T* a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b == a;
 }
 
 template <typename T, typename Deleter>
-bool operator!= (const T* a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator!= (const T* a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b != a;
 }
 
 template <typename T, typename Deleter>
-bool operator> (const T* a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator> (const T* a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b < a;
 }
 
 template <typename T, typename Deleter>
-bool operator>= (const T* a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator>= (const T* a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b <= a;
 }
 
 template <typename T, typename Deleter>
-bool operator< (const T* a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator< (const T* a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b > a;
 }
 
 template <typename T, typename Deleter>
-bool operator<= (const T* a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator<= (const T* a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b >= a;
 }
 
 template <typename T, typename Deleter>
-bool operator== (const std::unique_ptr<T, Deleter>& a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator== (const std::unique_ptr<T, Deleter>& a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b == a;
 }
 
 template <typename T, typename Deleter>
-bool operator!= (const std::unique_ptr<T, Deleter>& a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator!= (const std::unique_ptr<T, Deleter>& a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b != a;
 }
 
 template <typename T, typename Deleter>
-bool operator> (const std::unique_ptr<T, Deleter>& a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator> (const std::unique_ptr<T, Deleter>& a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b < a;
 }
 
 template <typename T, typename Deleter>
-bool operator>= (const std::unique_ptr<T, Deleter>& a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator>= (const std::unique_ptr<T, Deleter>& a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b <= a;
 }
 
 template <typename T, typename Deleter>
-bool operator< (const std::unique_ptr<T, Deleter>& a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator< (const std::unique_ptr<T, Deleter>& a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b > a;
 }
 
 template <typename T, typename Deleter>
-bool operator<= (const std::unique_ptr<T, Deleter>& a, const cppstream::not_null<std::unique_ptr<T, Deleter>>& b) noexcept
+bool operator<= (const std::unique_ptr<T, Deleter>& a, const not_null<std::unique_ptr<T, Deleter>>& b) noexcept
 {
     return b >= a;
 }
 
 template <typename T, typename Deleter>
-bool operator== (nullptr_t, const cppstream::not_null<std::unique_ptr<T, Deleter>>&) noexcept
+bool operator== (nullptr_t, const not_null<std::unique_ptr<T, Deleter>>&) noexcept
 {
     return false;
 }
 
 template <typename T, typename Deleter>
-bool operator!= (nullptr_t, const cppstream::not_null<std::unique_ptr<T, Deleter>>&) noexcept
+bool operator!= (nullptr_t, const not_null<std::unique_ptr<T, Deleter>>&) noexcept
 {
     return true;
 }
@@ -745,90 +708,92 @@ bool operator!= (nullptr_t, const cppstream::not_null<std::unique_ptr<T, Deleter
 // shared pointer
 
 template <typename T>
-bool operator== (const T* a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator== (const T* a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b == a;
 }
 
 template <typename T>
-bool operator!= (const T* a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator!= (const T* a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b != a;
 }
 
 template <typename T>
-bool operator> (const T* a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator> (const T* a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b < a;
 }
 
 template <typename T>
-bool operator>= (const T* a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator>= (const T* a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b <= a;
 }
 
 template <typename T>
-bool operator< (const T* a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator< (const T* a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b > a;
 }
 
 template <typename T>
-bool operator<= (const T* a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator<= (const T* a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b >= a;
 }
 
 template <typename T>
-bool operator== (const std::shared_ptr<T>& a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator== (const std::shared_ptr<T>& a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b == a;
 }
 
 template <typename T>
-bool operator!= (const std::shared_ptr<T>& a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator!= (const std::shared_ptr<T>& a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b != a;
 }
 
 template <typename T>
-bool operator> (const std::shared_ptr<T>& a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator> (const std::shared_ptr<T>& a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b < a;
 }
 
 template <typename T>
-bool operator>= (const std::shared_ptr<T>& a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator>= (const std::shared_ptr<T>& a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b <= a;
 }
 
 template <typename T>
-bool operator< (const std::shared_ptr<T>& a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator< (const std::shared_ptr<T>& a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b > a;
 }
 
 template <typename T>
-bool operator<= (const std::shared_ptr<T>& a, const cppstream::not_null<std::shared_ptr<T>>& b) noexcept
+bool operator<= (const std::shared_ptr<T>& a, const not_null<std::shared_ptr<T>>& b) noexcept
 {
     return b >= a;
 }
 
 template <typename T>
-bool operator== (nullptr_t, const cppstream::not_null<std::shared_ptr<T>>&) noexcept
+bool operator== (nullptr_t, const not_null<std::shared_ptr<T>>&) noexcept
 {
     return false;
 }
 
 template <typename T>
-bool operator!= (nullptr_t, const cppstream::not_null<std::shared_ptr<T>>&) noexcept
+bool operator!= (nullptr_t, const not_null<std::shared_ptr<T>>&) noexcept
 {
     return true;
 }
 
 #pragma endregion
+
+} // exstream namespace
 
 namespace std {
 
@@ -836,45 +801,45 @@ template <typename T>
 struct hash;
 
 template <typename T>
-void swap(cppstream::not_null<T*>& a, cppstream::not_null<T*>& b) noexcept
+void swap(exstream::not_null<T*>& a, exstream::not_null<T*>& b) noexcept
 {
     a.swap(b);
 }
 
 template <typename T, typename Deleter>
-void swap(cppstream::not_null<unique_ptr<T, Deleter>>& a, cppstream::not_null<unique_ptr<T, Deleter>>& b) noexcept
+void swap(exstream::not_null<unique_ptr<T, Deleter>>& a, exstream::not_null<unique_ptr<T, Deleter>>& b) noexcept
 {
     a.swap(b);
 }
 
 template <typename T>
-void swap(cppstream::not_null<shared_ptr<T>>& a, cppstream::not_null<shared_ptr<T>>& b) noexcept
+void swap(exstream::not_null<shared_ptr<T>>& a, exstream::not_null<shared_ptr<T>>& b) noexcept
 {
     a.swap(b);
 }
 
 template <typename T>
-struct hash<cppstream::not_null<T*>>
+struct hash<exstream::not_null<T*>>
 {
-    size_t operator() (const cppstream::not_null<T*>& pointer) const noexcept
+    size_t operator() (const exstream::not_null<T*>& pointer) const noexcept
     {
         return std::hash<T*>()(pointer);
     }
 };
 
 template <typename T, typename Deleter>
-struct hash<cppstream::not_null<unique_ptr<T, Deleter>>>
+struct hash<exstream::not_null<unique_ptr<T, Deleter>>>
 {
-    size_t operator() (const cppstream::not_null<unique_ptr<T, Deleter>>& pointer) const noexcept
+    size_t operator() (const exstream::not_null<unique_ptr<T, Deleter>>& pointer) const noexcept
     {
         return std::hash<T*>()(pointer.get());
     }
 };
 
 template <typename T>
-struct hash<cppstream::not_null<shared_ptr<T>>>
+struct hash<exstream::not_null<shared_ptr<T>>>
 {
-    size_t operator() (const cppstream::not_null<shared_ptr<T>>& pointer) const noexcept
+    size_t operator() (const exstream::not_null<shared_ptr<T>>& pointer) const noexcept
     {
         return std::hash<T*>()(pointer.get());
     }

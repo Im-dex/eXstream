@@ -3,8 +3,7 @@
 #include "detail/traits.hpp"
 #include "detail/partial_application.hpp"
 #include "detail/result_traits.hpp"
-
-#include "constexpr_if.hpp"
+#include "detail/constexpr_if.hpp"
 #include "error_transformation.hpp"
 
 #include "map_iterator.hpp"
@@ -12,7 +11,7 @@
 #include "filter_iterator.hpp"
 #include "distinct_iterator.hpp"
 
-namespace cppstream {
+namespace exstream {
 
 template <typename T,
           typename Source,
@@ -138,4 +137,4 @@ private:
     }
 };
 
-} // cppstream namespace
+} // exstream namespace

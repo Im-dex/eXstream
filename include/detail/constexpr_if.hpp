@@ -3,11 +3,11 @@
 #include "config.hpp"
 #include "utility.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <type_traits>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-namespace cppstream {
+namespace exstream {
 
 template <bool>
 class constexpr_if;
@@ -136,4 +136,4 @@ private:
     constexpr_if(constexpr_if&&) noexcept = default;
 };
 
-} // cppstream namespace
+} // exstream namespace

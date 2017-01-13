@@ -2,11 +2,11 @@
 
 #include "detail/type_traits.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <cassert>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-namespace cppstream {
+namespace exstream {
 
 template <typename BeginIterator, typename EndIterator>
 class iterator final
@@ -73,4 +73,4 @@ auto make_iterator(BeginIterator&& begin, EndIterator&& end)
 }
 
 } // detail namespace
-} // cppstream namespace
+} // exstream namespace

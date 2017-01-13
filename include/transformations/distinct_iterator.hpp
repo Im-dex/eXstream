@@ -7,11 +7,11 @@
 #include "detail/result_traits.hpp"
 #include "detail/scope_guard.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <unordered_set>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-namespace cppstream {
+namespace exstream {
 
 // TODO: possibility to provide comparator
 // TODO: possibility to provide hash
@@ -197,7 +197,7 @@ public:
     reference next() noexcept(detail::distinct::is_nothrow_fetch<Iterator>())
     {
         if (!cache_has_value()) fetch();
-        CPPSTREAM_SCOPE_EXIT noexcept { invalidate_cache(); };
+        EXSTREAM_SCOPE_EXIT noexcept { invalidate_cache(); };
         return cache.get().release();
     }
 
@@ -249,4 +249,4 @@ private:
     bool valid_cache;
 };
 
-} // cppstream namespace
+} // exstream namespace

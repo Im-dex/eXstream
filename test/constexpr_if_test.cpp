@@ -1,9 +1,9 @@
 #include "test.hpp"
 
-#include "constexpr_if.hpp"
+#include "detail/constexpr_if.hpp"
 #include "detail/type_traits.hpp"
 
-using namespace cppstream;
+using namespace exstream;
 
 #define TEST_CASE_NAME ConstexprIfTest
 

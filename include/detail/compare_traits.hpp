@@ -16,7 +16,7 @@ struct greater_equal;
 
 } // std namespace
 
-namespace cppstream {
+namespace exstream {
 
 enum class Order
 {
@@ -55,4 +55,4 @@ struct compare_traits<std::greater_equal<T>>
     static constexpr Order order = Order::Descending;
 };
 
-} // cppstream namespace
+} // exstream namespace

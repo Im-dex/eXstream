@@ -2,7 +2,7 @@
 
 #include "variant.hpp"
 
-using namespace cppstream;
+using namespace exstream;
 using namespace testing;
 using namespace std::string_literals;
 
@@ -173,7 +173,7 @@ TEST(TEST_CASE_NAME, get_Test)
     var value("str"s);
     EXPECT_THAT(value.get<std::string>(), Eq("str"s));
 
-#ifdef CPPSTREAM_DEBUG
+#ifdef EXSTREAM_DEBUG
     EXPECT_ANY_DEATH(value.get<int>());
 #endif
 
@@ -194,7 +194,7 @@ TEST(TEST_CASE_NAME, match_Test)
         auto result = var(10).match([](auto&& value)
         {
             using type = std::decay_t<decltype(value)>;
-            CPPSTREAM_UNUSED(value);
+            EXSTREAM_UNUSED(value);
 
             return constexpr_if<std::is_same_v<type, int>>()
                 .then([&](auto) {
@@ -218,7 +218,7 @@ TEST(TEST_CASE_NAME, match_Test)
         auto result = value.match([](auto&& value)
         {
             using type = std::decay_t<decltype(value)>;
-            CPPSTREAM_UNUSED(value);
+            EXSTREAM_UNUSED(value);
 
             return constexpr_if<std::is_same_v<type, int>>()
                 .then([](auto) {

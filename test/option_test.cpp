@@ -2,7 +2,7 @@
 
 #include "option.hpp"
 
-using namespace cppstream;
+using namespace exstream;
 using namespace testing;
 
 #define TEST_CASE_NAME OptionTest
@@ -135,7 +135,7 @@ TEST(TEST_CASE_NAME, get_Test)
     EXPECT_THAT(some(0).get_or_throw<test_exception>(), Eq(0));
     EXPECT_THAT(some(0).get_or_throw(test_exception()), Eq(0));
 
-#ifdef STREAM_DEBUG
+#ifdef EXSTREAM_DEBUG
     EXPECT_ANY_DEATH(empty.get());
 #endif
     EXPECT_THROW(empty.get_or_throw<test_exception>(), test_exception);
@@ -198,7 +198,7 @@ TEST(TEST_CASE_NAME, IteratorTest)
     EXPECT_THAT(nonEmpty.rbegin()++, Eq(nonEmpty.rbegin()));
     EXPECT_THAT(nonEmpty.crbegin()++, Eq(nonEmpty.crbegin()));
 
-#ifdef STREAM_DEBUG
+#ifdef EXSTREAM_DEBUG
     EXPECT_ANY_DEATH(*empty.begin());
     EXPECT_ANY_DEATH(*empty.cbegin());
     EXPECT_ANY_DEATH(*empty.rbegin());

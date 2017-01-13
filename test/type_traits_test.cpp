@@ -2,11 +2,11 @@
 
 #include "detail/type_traits.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <functional>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-using namespace cppstream;
+using namespace exstream;
 using namespace testing;
 
 #define TEST_CASE_NAME TraitsTest
@@ -131,7 +131,7 @@ TEST(TEST_CASE_NAME, is_invokable_Test)
     EXPECT_FALSE((is_invokable_v<decltype(genericLambda), int, float&, const double>));
 }
 
-CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(value_type)
+EXSTREAM_DEFINE_HAS_TYPE_MEMBER(value_type)
 
 TEST(TEST_CASE_NAME, has_type_Test)
 {

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.6)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 
-set(PROJECT stream)
+set(PROJECT eXstream)
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
 project(${PROJECT})

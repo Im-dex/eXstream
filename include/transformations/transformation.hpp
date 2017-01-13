@@ -2,7 +2,7 @@
 
 #include "with_transformations.hpp"
 
-namespace cppstream {
+namespace exstream {
 
 template <typename T,
           typename Source,
@@ -103,4 +103,4 @@ public:
     }
 };
 
-} // cppstream namespace
+} // exstream namespace

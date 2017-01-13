@@ -1,23 +1,22 @@
 #pragma once
 
 #include "config.hpp"
-// ReSharper disable once CppUnusedIncludeDirective
 #include "detail/preprocessor.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
 #define EXPECT_TYPES_EQ(T1, T2)\
-    EXPECT_PRED_FORMAT4((::cppstream::is_types_eq<T1, T2>), Type<T1>(), Type<T2>(), CPPSTREAM_PP_STRINGIZE(T1), CPPSTREAM_PP_STRINGIZE(T2))
+    EXPECT_PRED_FORMAT4((::exstream::is_types_eq<T1, T2>), Type<T1>(), Type<T2>(), EXSTREAM_PP_STRINGIZE(T1), EXSTREAM_PP_STRINGIZE(T2))
 
 #define EXPECT_TYPES_NE(T1, T2)\
-    EXPECT_PRED_FORMAT4((::cppstream::is_types_ne<T1, T2>), Type<T1>(), Type<T2>(), CPPSTREAM_PP_STRINGIZE(T1), CPPSTREAM_PP_STRINGIZE(T2))
+    EXPECT_PRED_FORMAT4((::exstream::is_types_ne<T1, T2>), Type<T1>(), Type<T2>(), EXSTREAM_PP_STRINGIZE(T1), EXSTREAM_PP_STRINGIZE(T2))
 
 #define EXPECT_ANY_DEATH(expression) EXPECT_DEATH(expression, ".*")
 
-namespace cppstream {
+namespace exstream {
 
 template <typename T>
 class Type final
@@ -75,4 +74,4 @@ is_types_ne(const char*, const char*, const char*, const char*,
                                        << ySource << " = " << y;
 }
 
-} // cppstream namespace
+} // exstream namespace

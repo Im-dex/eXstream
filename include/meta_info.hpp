@@ -1,8 +1,8 @@
 #pragma once
 
-#include "compare_traits.hpp"
+#include "detail/compare_traits.hpp"
 
-namespace cppstream {
+namespace exstream {
 
 template <bool IsOrdered,
           bool IsDistinct,
@@ -14,4 +14,4 @@ struct meta_info final
     static constexpr Order order      = AnOrder;
 };
 
-} // cppstream namespace
+} // exstream namespace

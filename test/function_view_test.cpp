@@ -1,8 +1,8 @@
 #include "test.hpp"
 
-#include "function_view.hpp"
+#include "detail/function_view.hpp"
 
-using namespace cppstream;
+using namespace exstream;
 
 #define TEST_CASE_NAME FunctionViewTest
 

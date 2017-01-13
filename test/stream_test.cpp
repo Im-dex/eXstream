@@ -2,7 +2,7 @@
 
 #include "stream_of.hpp"
 
-using namespace cppstream;
+using namespace exstream;
 
 #define TEST_CASE_NAME StreamTest
 

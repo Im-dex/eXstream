@@ -2,11 +2,11 @@
 
 #include "config.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <type_traits>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-namespace cppstream {
+namespace exstream {
 
 template <typename Iterator>
 class transform_iterator
@@ -34,4 +34,4 @@ protected:
     Iterator iterator;
 };
 
-} // cppstream namespace
+} // exstream namespace

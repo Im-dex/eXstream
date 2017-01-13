@@ -1,16 +1,16 @@
 #pragma once
 
 #include "utility.hpp"
-#include "container_traits.hpp"
+#include "detail/container_traits.hpp"
 #include "detail/type_traits.hpp"
 #include "not_null.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <cassert>
 #include <iterator>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-namespace cppstream {
+namespace exstream {
 
 template <typename T>
 class option;
@@ -743,7 +743,7 @@ option<remove_cvr_t<T>> some(T&& value) noexcept(std::is_nothrow_constructible_v
     return option<remove_cvr_t<T>>(std::forward<T>(value));
 }
 
-CPPSTREAM_FORCEINLINE
+EXSTREAM_FORCEINLINE
 constexpr none_t none() noexcept
 {
     return none_t();
@@ -1287,14 +1287,14 @@ struct container_traits<option<T>>
     static constexpr bool is_distinct = true;
 };
 
-} // cppstream namespace
+} // exstream namespace
 
 namespace std {
 
 template <typename T>
-struct hash<cppstream::option<T>>
+struct hash<exstream::option<T>>
 {
-    size_t operator()(const cppstream::option<T>& option) const noexcept
+    size_t operator()(const exstream::option<T>& option) const noexcept
     {
         if (option.empty()) return 0;
 

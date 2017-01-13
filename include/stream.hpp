@@ -3,7 +3,7 @@
 #include "transformations/with_transformations.hpp"
 #include "transformations/transformation.hpp"
 
-namespace cppstream {
+namespace exstream {
 
 template <typename T,
           typename Iterator,
@@ -69,4 +69,4 @@ auto make_stream(Iterator&& iterator, const Allocator& alloc)
 
 
 } // detail namespace
-} // cppstream namespace
+} // exstream namespace

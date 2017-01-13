@@ -4,7 +4,7 @@
 #include "option.hpp"
 #include "detail/scope_guard.hpp"
 
-namespace cppstream {
+namespace exstream {
 namespace detail {
 namespace filter {
 
@@ -62,7 +62,7 @@ public:
     reference next() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
     {
         if (cache.empty()) fetch();
-        CPPSTREAM_SCOPE_EXIT noexcept(std::is_nothrow_destructible_v<storage>)
+        EXSTREAM_SCOPE_EXIT noexcept(std::is_nothrow_destructible_v<storage>)
         {
             cache.reset();
         };
@@ -97,4 +97,4 @@ private:
     const Function& function;
 };
 
-} // cppstream namespace
+} // exstream namespace

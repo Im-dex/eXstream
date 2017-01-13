@@ -1,6 +1,6 @@
 #pragma once
 
-namespace cppstream {
+namespace exstream {
 
 template <template <typename, typename> class T, typename Arg>
 struct partial_apply2 final
@@ -41,4 +41,4 @@ struct partial_apply4 final
     using bind_4 = T<_1, _2, _3, Arg>;
 };
 
-} // cppstream namespace
+} // exstream namespace

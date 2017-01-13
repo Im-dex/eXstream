@@ -2,13 +2,13 @@
 
 #include "config.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <functional>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
 // NOTE: depends on result of std::result_of
 
-namespace cppstream {
+namespace exstream {
 namespace detail {
 
 template <typename T>
@@ -246,23 +246,23 @@ T& get_lvalue_reference(const std::reference_wrapper<T> ref) noexcept
     return ref.get();
 }
 
-} // cppstream namespaces
+} // exstream namespaces
 
 namespace std {
 
 template <typename T>
-struct hash<cppstream::detail::value_storage<T>>
+struct hash<exstream::detail::value_storage<T>>
 {
-    size_t operator() (const cppstream::detail::value_storage<T>& value) const noexcept
+    size_t operator() (const exstream::detail::value_storage<T>& value) const noexcept
     {
         return std::hash<T>()(value.get_ref());
     }
 };
 
 template <typename T>
-struct hash<cppstream::detail::reference_storage<T>>
+struct hash<exstream::detail::reference_storage<T>>
 {
-    size_t operator() (const cppstream::detail::reference_storage<T> value) const noexcept
+    size_t operator() (const exstream::detail::reference_storage<T> value) const noexcept
     {
         return std::hash<T>()(value.get_ref());
     }

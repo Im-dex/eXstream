@@ -3,7 +3,7 @@
 #include "detail/bool_c.hpp"
 #include "utility.hpp"
 
-namespace cppstream {
+namespace exstream {
 
 constexpr size_t type_list_npos = size_t(-1);
 
@@ -150,4 +150,4 @@ template <typename List, typename T>
 constexpr size_t index_of_v = index_of<List, T>::value;
 
 } // type_list_ops namespace
-} // cppstream namespace
+} // exstream namespace

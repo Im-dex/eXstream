@@ -3,18 +3,18 @@
 #include "type_traits.hpp"
 #include "container_traits.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <iterator>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-namespace cppstream {
+namespace exstream {
 namespace detail {
 
-CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(difference_type)
-CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(value_type)
-CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(pointer)
-CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(reference)
-CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(iterator_category)
+EXSTREAM_DEFINE_HAS_TYPE_MEMBER(difference_type)
+EXSTREAM_DEFINE_HAS_TYPE_MEMBER(value_type)
+EXSTREAM_DEFINE_HAS_TYPE_MEMBER(pointer)
+EXSTREAM_DEFINE_HAS_TYPE_MEMBER(reference)
+EXSTREAM_DEFINE_HAS_TYPE_MEMBER(iterator_category)
 
 template <typename T>
 struct is_iterator
@@ -46,10 +46,10 @@ constexpr bool is_iterator_v = is_iterator<T>::value;
 namespace detail {
 
 template <typename T, typename Tag, bool IsIterator = false>
-struct is_iterator_with_tag_impl : public std::false_type {};
+struct is_iterator_with_tag_impl : std::false_type {};
 
 template <typename T, typename Tag>
-struct is_iterator_with_tag_impl<T, Tag, true> : public std::is_base_of<Tag, typename std::iterator_traits<T>::iterator_category> {};
+struct is_iterator_with_tag_impl<T, Tag, true> : std::is_base_of<Tag, typename std::iterator_traits<T>::iterator_category> {};
 
 template <typename T, typename Tag>
 using is_iterator_with_tag = is_iterator_with_tag_impl<T, Tag, is_iterator_v<T>>;
@@ -71,12 +71,12 @@ constexpr bool is_random_access_iterator_v = is_random_access_iterator<T>::value
 namespace detail {
 
 template <bool IsIterator, typename T>
-struct is_const_iterator : public std::false_type
+struct is_const_iterator : std::false_type
 {
 };
 
 template <typename T>
-struct is_const_iterator<true, T> : public std::is_const<std::remove_reference_t<typename std::iterator_traits<T>::reference>>
+struct is_const_iterator<true, T> : std::is_const<std::remove_reference_t<typename std::iterator_traits<T>::reference>>
 {
 };
 
@@ -95,10 +95,10 @@ struct is_iterable
 {
     template <typename U1, typename U2>
     static auto check(U1& x, const U2& y) -> decltype(std::conjunction<
-        cppstream::is_forward_iterator<decltype(std::begin(x))>, // TODO: relax to InputIterator???
-        cppstream::is_forward_iterator<decltype(std::end(x))>,
-        cppstream::is_forward_iterator<decltype(std::begin(y))>,
-        cppstream::is_forward_iterator<decltype(std::end(y))>
+        is_forward_iterator<decltype(std::begin(x))>, // TODO: relax to InputIterator???
+        is_forward_iterator<decltype(std::end(x))>,
+        is_forward_iterator<decltype(std::begin(y))>,
+        is_forward_iterator<decltype(std::end(y))>
     >{});
 
     static std::false_type check(...);
@@ -111,10 +111,10 @@ struct is_reverse_iterable
 {
     template <typename U1, typename U2>
     static auto check(U1& x, const U2& y) -> decltype(std::conjunction<
-        cppstream::is_forward_iterator<decltype(std::rbegin(x))>, // TODO: relax to InputIterator???
-        cppstream::is_forward_iterator<decltype(std::rend(x))>,
-        cppstream::is_forward_iterator<decltype(std::rbegin(y))>,
-        cppstream::is_forward_iterator<decltype(std::rend(y))>
+        is_forward_iterator<decltype(std::rbegin(x))>, // TODO: relax to InputIterator???
+        is_forward_iterator<decltype(std::rend(x))>,
+        is_forward_iterator<decltype(std::rbegin(y))>,
+        is_forward_iterator<decltype(std::rend(y))>
     >{});
 
     static std::false_type check(...);
@@ -137,10 +137,10 @@ template <typename T>
 constexpr bool is_reverse_iterable_v = is_reverse_iterable<T>::value;
 
 template <typename T, typename R = std::void_t<>>
-struct is_sizable : public std::false_type {};
+struct is_sizable : std::false_type {};
 
 template <typename T>
-struct is_sizable<T, std::void_t<decltype(std::declval<const T>().size())>> : public std::bool_constant<std::numeric_limits<decltype(std::declval<const T>().size())>::is_integer> {};
+struct is_sizable<T, std::void_t<decltype(std::declval<const T>().size())>> : std::bool_constant<std::numeric_limits<decltype(std::declval<const T>().size())>::is_integer> {};
 
 template <typename T>
 constexpr bool is_sizable_v = is_sizable<T>::value;
@@ -157,11 +157,4 @@ using is_distinct = std::bool_constant<container_traits<T>::is_distinct>;
 template <typename T>
 constexpr bool is_distinct_v = container_traits<T>::is_distinct;
 
-template <typename T>
-using value_type = std::conditional_t<
-    sizeof(T) <= sizeof(intptr_t),
-    T,
-    T&
->;
-
-} // cppstream namespace
+} // exstream namespace

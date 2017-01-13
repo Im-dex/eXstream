@@ -24,7 +24,7 @@ class unordered_set;
 
 } // std namespace
 
-namespace cppstream {
+namespace exstream {
 namespace detail {
 namespace container {
 
@@ -82,4 +82,4 @@ struct container_traits<std::unordered_set<Key, Hash, KeyCompare, Alloc>>
     static constexpr bool is_distinct = true;
 };
 
-} // cppstream namespace
+} // exstream namespace

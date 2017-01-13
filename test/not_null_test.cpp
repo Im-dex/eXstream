@@ -2,11 +2,11 @@
 
 #include "not_null.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <memory>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-using namespace cppstream;
+using namespace exstream;
 using namespace testing;
 
 #define TEST_CASE_NAME NotNullTest
@@ -20,7 +20,7 @@ using shared = not_null<shared_ptr>;
 
 TEST(TEST_CASE_NAME, ConstructorTest)
 {
-#ifdef STREAM_DEBUG
+#ifdef EXSTREAM_DEBUG
     EXPECT_ANY_DEATH(raw(nullptr));
     EXPECT_ANY_DEATH(unique(nullptr));
     EXPECT_ANY_DEATH(shared(nullptr));

@@ -2,11 +2,11 @@
 
 #include "constexpr_if.hpp"
 
-CPPSTREAM_SUPPRESS_ALL_WARNINGS
+EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <limits>
-CPPSTREAM_RESTORE_ALL_WARNINGS
+EXSTREAM_RESTORE_ALL_WARNINGS
 
-#define CPPSTREAM_DEFINE_HAS_TYPE_MEMBER(typeName)\
+#define EXSTREAM_DEFINE_HAS_TYPE_MEMBER(typeName)\
     template <typename T, typename U = std::void_t<>>\
     struct has_ ## typeName ## _member : public std::false_type {};\
     \
@@ -18,11 +18,11 @@ CPPSTREAM_RESTORE_ALL_WARNINGS
 
 namespace std {
 
-#if defined(CPPSTREAM_GCC) || defined(CPPSTREAM_CLANG)
+#if defined(EXSTREAM_GCC) || defined(EXSTREAM_CLANG)
     // TODO: define bool_constant, is_*_v etc
 #endif
 
-#ifdef CPPSTREAM_MSVC
+#ifdef EXSTREAM_MSVC
 
 template <typename T, typename U>
 using is_swappable_with = _Is_swappable_with<T, U>;
@@ -54,7 +54,7 @@ constexpr bool is_nothrow_swappable_v = is_nothrow_swappable<T>::value;
 
 } // std namespace
 
-namespace cppstream {
+namespace exstream {
 
 template <typename T>
 using remove_cvr = std::remove_cv<std::remove_reference_t<T>>;
@@ -100,12 +100,12 @@ constexpr auto sum(IntType value, Ints... tail) noexcept
 {
     static_assert(is_integer_v<IntType>, "IntType should be integer type");
 
-#ifndef CPPSTREAM_MSVC
+#ifndef EXSTREAM_MSVC
     // NOTE: MSVC 2015 error: expected constant expression
     static_assert(std::conjunction_v<is_integer<Ints>...>, "All of Ints types should be integer");
 #endif
 
-    CPPSTREAM_MSVC_SUPPRESS_WARNINGS_PUSH(4296)
+    EXSTREAM_MSVC_SUPPRESS_WARNINGS_PUSH(4296)
 
     return constexpr_if<(sizeof...(Ints) > 0)>()
         .then([&](auto) noexcept
@@ -117,7 +117,7 @@ constexpr auto sum(IntType value, Ints... tail) noexcept
             return value;
         })(nothing);
 
-    CPPSTREAM_MSVC_WARNINGS_POP
+    EXSTREAM_MSVC_WARNINGS_POP
 }
 
 namespace detail {
@@ -171,4 +171,4 @@ struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
 template <typename T>
 constexpr bool is_reference_wrapper_v = is_reference_wrapper<T>::value;
 
-} // cppstream namespace
+} // exstream namespace
