@@ -65,7 +65,7 @@ public:
     reference next() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
     {
         if (cache.empty()) fetch();
-        EXSTREAM_SCOPE_EXIT noexcept(std::is_nothrow_destructible_v<storage>)
+        EXSTREAM_SCOPE_SUCCESS noexcept(std::is_nothrow_destructible_v<storage>)
         {
             cache.reset();
         };

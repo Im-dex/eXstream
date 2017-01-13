@@ -332,11 +332,8 @@ public:
     
     void reset() noexcept(std::is_nothrow_destructible_v<T>)
     {
-        if (non_empty())
-        {
-            destroy();
-            emptyFlag = true;
-        }
+        destroy();
+        emptyFlag = true;
     }
     
     bool operator== (const none_t&) const noexcept
@@ -394,7 +391,7 @@ public:
             .then([this](auto&&... args) noexcept(std::is_nothrow_destructible_v<T> &&
                                                   std::is_nothrow_constructible_v<T, decltype(args)...>)
             {
-                if (non_empty()) destroy();
+                destroy();
                 construct(std::forward<decltype(args)>(args)...);
                 emptyFlag = false;
             })

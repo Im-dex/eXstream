@@ -3,6 +3,10 @@
 #include "transform_iterator.hpp"
 #include "detail/result_traits.hpp"
 
+EXSTREAM_SUPPRESS_ALL_WARNINGS
+#include <cassert>
+EXSTREAM_RESTORE_ALL_WARNINGS
+
 namespace exstream {
 
 template <typename Iterator,
@@ -45,11 +49,13 @@ public:
     // TODO: replace reference to primitive type with a value type
     reference next() noexcept(noexcept(std::declval<const Function&>()(std::declval<Iterator&>().next())))
     {
+        assert(has_next() && "Iterator is out of range");
         return traits::unwrap(function(iterator.next()));
     }
 
     void skip() noexcept(noexcept(std::declval<Iterator&>().skip()))
     {
+        assert(has_next() && "Iterator is out of range");
         iterator.skip();
     }
 

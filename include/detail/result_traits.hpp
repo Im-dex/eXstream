@@ -262,7 +262,7 @@ struct hash<exstream::detail::value_storage<T>>
 template <typename T>
 struct hash<exstream::detail::reference_storage<T>>
 {
-    size_t operator() (const exstream::detail::reference_storage<T> value) const noexcept
+    size_t operator() (const exstream::detail::reference_storage<T>& value) const noexcept
     {
         return std::hash<remove_const_t<T>>()(value.get_ref());
     }

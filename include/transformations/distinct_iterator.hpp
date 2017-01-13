@@ -9,6 +9,7 @@
 
 EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <unordered_set>
+#include <cassert>
 EXSTREAM_RESTORE_ALL_WARNINGS
 
 namespace exstream {
@@ -30,14 +31,16 @@ public:
     explicit distinct_iterator(const Iterator& iterator, const Allocator& alloc)
         : transform_iterator(iterator),
           set(alloc),
-          elementIter()
+          elementIter(std::end(set)),
+          end(elementIter)
     {
     }
 
     explicit distinct_iterator(Iterator&& iterator, const Allocator& alloc)
         : transform_iterator(std::move(iterator)),
           set(alloc),
-          elementIter()
+          elementIter(std::end(set)),
+          end(elementIter)
     {
     }
 
@@ -54,12 +57,14 @@ public:
 
     reference next()
     {
+        assert(has_next() && "Iterator is out of range");
         if (!has_element()) fetch();
         return elementIter->copy();
     }
 
     void skip()
     {
+        assert(has_next() && "Iterator is out of range");
         fetch();
     }
 
@@ -74,7 +79,7 @@ private:
 
     void fetch()
     {
-        elementIter = set.end();
+        elementIter = end;
 
         while (iterator.has_next())
         {
@@ -87,13 +92,14 @@ private:
         }
     }
 
-    bool has_element() const noexcept
+    bool has_element() const noexcept(is_nothrow_comparable_v<set_iterator>)
     {
-        return elementIter != set.end();
+        return elementIter != end;
     }
 
     set_type set;
     set_iterator elementIter;
+    set_iterator end;
 };
 
 template <typename Iterator,
@@ -130,11 +136,13 @@ public:
 
     reference next() noexcept(noexcept(std::declval<Iterator&>().next()))
     {
+        assert(has_next() && "Iterator is out of range");
         return iterator.next();
     }
 
     void skip() noexcept(noexcept(std::declval<Iterator&>().skip()))
     {
+        assert(has_next() && "Iterator is out of range");
         iterator.skip();
     }
 };
@@ -196,6 +204,8 @@ public:
 
     reference next() noexcept(detail::distinct::is_nothrow_fetch<Iterator>())
     {
+        assert(has_next() && "Iterator is out of range");
+
         if (!cache_has_value()) fetch();
         EXSTREAM_SCOPE_EXIT noexcept { invalidate_cache(); };
         return cache.get().release();
@@ -203,6 +213,8 @@ public:
 
     void skip() noexcept(detail::distinct::is_nothrow_fetch<Iterator>())
     {
+        assert(has_next() && "Iterator is out of range");
+
         invalidate_cache();
         fetch();
     }

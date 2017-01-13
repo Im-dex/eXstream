@@ -30,12 +30,7 @@ public:
     stream(const stream&) = delete;
     stream& operator= (const stream&) = delete;
 
-    Iterator& get_iterator() noexcept
-    {
-        return iterator;
-    }
-
-    const Iterator& get_iterator() const noexcept
+    Iterator get_iterator() const noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
     {
         return iterator;
     }
