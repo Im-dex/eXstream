@@ -4,6 +4,8 @@
 #include "meta_info.hpp"
 #include "transform_iterator.hpp"
 #include "option.hpp"
+#include "detail/result_traits.hpp"
+#include "detail/scope_guard.hpp"
 
 CPPSTREAM_SUPPRESS_ALL_WARNINGS
 #include <unordered_set>
@@ -25,24 +27,17 @@ public:
     // TODO: maybe use simple set to preserve order???
     using meta = meta_info<false, true, Order::Ascending>; // TODO: custom comparator can change this
 
-private:
-
-    using set_value = remove_cvr_t<value_type>;
-    using set_type = std::unordered_set<set_value, std::hash<set_value>, std::equal_to<set_value>, Allocator>;
-
-public:
-
     explicit distinct_iterator(const Iterator& iterator, const Allocator& alloc)
         : transform_iterator(iterator),
           set(0, alloc),
-          element()
+          elementIter()
     {
     }
 
     explicit distinct_iterator(Iterator&& iterator, const Allocator& alloc)
         : transform_iterator(std::move(iterator)),
           set(0, alloc),
-          element()
+          elementIter()
     {
     }
 
@@ -51,56 +46,54 @@ public:
     distinct_iterator(const distinct_iterator&) = delete;
     distinct_iterator& operator= (const distinct_iterator&) = delete;
 
-    bool at_end()
+    bool has_next()
     {
-        skip_duplicates();
-        return iterator.at_end();
+        if (!has_element()) fetch();
+        return iterator.has_next() || has_element();
     }
 
-    void advance() noexcept(noexcept(std::declval<Iterator>().advance()))
+    reference next()
     {
-        iterator.advance();
+        if (!has_element()) fetch();
+        return elementIter->copy();
     }
 
-    reference get_value()
+    void skip()
     {
-        return element.empty() ? iterator.get_value()
-                               : std::move(element).get();
+        fetch();
     }
 
 private:
 
+    using storage = typename result_traits<reference>::storage;
+    using set_type = std::unordered_set<storage, std::hash<storage>, std::equal_to<storage>, Allocator>;
+    using set_iterator = typename set_type::iterator;
+
     // TODO: forward size if possible and then reserve
     // TODO: set.reserve(???);
 
-    void skip_duplicates()
+    void fetch()
     {
-        while (!iterator.at_end())
-        {
-            auto&& value = iterator.get_value();
+        elementIter = set.end();
 
-            if (set.find(value) == set.end())
+        while (iterator.has_next())
+        {
+            auto insertResult = set.insert(iterator.next());
+            if (insertResult.second)
             {
-                set.insert(value);
-                store_element(std::forward<decltype(value)>(value));
+                elementIter = insertResult.first;
                 break;
             }
-
-            iterator.advance();
         }
     }
 
-    static void store_element(const value_type&) noexcept
+    bool has_element() const noexcept
     {
-    }
-
-    void store_element(value_type&& value) noexcept(noexcept(std::declval<option<value_type>&>() = std::move(value)))
-    {
-        element = std::move(value);
+        return elementIter != set.end();
     }
 
     set_type set;
-    option<value_type> element;
+    set_iterator elementIter;
 };
 
 template <typename Iterator,
@@ -112,6 +105,7 @@ class distinct_iterator<Iterator, meta_info<IsOrdered, true /*IsDistinct*/, AnOr
 public:
 
     using value_type = typename Iterator::value_type;
+    using reference = typename Iterator::reference;
     using meta = meta_info<IsOrdered, true, AnOrder>;
 
     explicit distinct_iterator(const Iterator& iterator, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
@@ -129,19 +123,19 @@ public:
     distinct_iterator(const distinct_iterator&) = delete;
     distinct_iterator& operator= (const distinct_iterator&) = delete;
 
-    bool at_end() noexcept(noexcept(std::declval<Iterator>().at_end()))
+    bool has_next() noexcept(noexcept(std::declval<Iterator>().has_next()))
     {
-        return iterator.at_end();
+        return iterator.has_next();
     }
 
-    void advance() noexcept(noexcept(std::declval<Iterator>().advance()))
+    reference next() noexcept(noexcept(std::declval<Iterator>().next()))
     {
-        iterator.advance();
+        return iterator.next();
     }
 
-    value_type get_value() noexcept(noexcept(std::declval<Iterator>().get_value()))
+    void skip() noexcept(noexcept(std::declval<Iterator>().skip()))
     {
-        return iterator.get_value();
+        iterator.skip();
     }
 };
 
@@ -149,14 +143,15 @@ namespace detail {
 namespace distinct {
 
 template <typename Iterator>
-constexpr bool is_nothrow_find_next() noexcept
+constexpr bool is_nothrow_fetch() noexcept
 {
     using value_type = typename Iterator::value_type;
-    using get_value_type = decltype(std::declval<Iterator>().get_value());
+    using reference = typename Iterator::reference;
+    using storage = typename result_traits<reference>::storage;
 
-    return noexcept(std::declval<Iterator>().at_end())                 &&
-           noexcept(std::declval<Iterator>().get_value())              &&
-           std::is_nothrow_constructible_v<value_type, get_value_type> &&
+    return noexcept(std::declval<Iterator>().has_next())            &&
+           noexcept(std::declval<Iterator>().next())                &&
+           std::is_nothrow_assignable_v<option<storage>, reference> &&
            is_nothrow_comparable_v<value_type>;
 }
 
@@ -171,17 +166,20 @@ class distinct_iterator<Iterator, meta_info<true /*IsOrdered*/, false /*IsDistin
 public:
 
     using value_type = typename Iterator::value_type;
+    using reference = typename Iterator::reference;
     using meta = meta_info<true, true, AnOrder>;
 
     explicit distinct_iterator(const Iterator& iterator, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
         : transform_iterator(iterator),
-          value()
+          cache(),
+          valid_cache(false)
     {
     }
 
     explicit distinct_iterator(Iterator&& iterator, const Allocator&) noexcept(std::is_nothrow_move_constructible_v<Iterator>)
         : transform_iterator(std::move(iterator)),
-          value()
+          cache(),
+          valid_cache(false)
     {
     }
 
@@ -190,42 +188,65 @@ public:
     distinct_iterator(const distinct_iterator&) = delete;
     distinct_iterator& operator= (const distinct_iterator&) = delete;
 
-    bool at_end() noexcept(detail::distinct::is_nothrow_find_next<Iterator>())
+    bool has_next() noexcept(detail::distinct::is_nothrow_fetch<Iterator>())
     {
-        find_next();
-        return iterator.at_end() && value.empty();
+        if (!cache_has_value()) fetch();
+        return iterator.has_next() || cache_has_value();
     }
 
-    void advance() noexcept(std::is_nothrow_destructible_v<value_type>)
+    reference next() noexcept(detail::distinct::is_nothrow_fetch<Iterator>())
     {
-        value.reset();
+        if (!cache_has_value()) fetch();
+        CPPSTREAM_SCOPE_EXIT noexcept { invalidate_cache(); };
+        return cache.get().release();
     }
 
-    value_type get_value() noexcept(detail::distinct::is_nothrow_find_next<Iterator>())
+    void skip() noexcept(detail::distinct::is_nothrow_fetch<Iterator>())
     {
-        find_next();
-        return std::move(value).get();
+        invalidate_cache();
+        fetch();
     }
 
 private:
 
-    void find_next() noexcept(detail::distinct::is_nothrow_find_next<Iterator>())
-    {
-        if (value.non_empty()) return;
+    using storage = typename result_traits<reference>::storage;
 
-        if (!iterator.at_end())
+    void fetch() noexcept(detail::distinct::is_nothrow_fetch<Iterator>())
+    {
+        if (cache.empty())
         {
-            value.emplace(iterator.get_value());
-            iterator.advance();
+            if (iterator.has_next())
+            {
+                cache = iterator.next();
+                valid_cache = true;
+            }
+            return;
         }
 
-        while (!iterator.at_end())
+        while (iterator.has_next())
         {
-            if (value != iterator.get_value()) break;
+            auto&& value = iterator.next();
+            if (cache.get() != std::as_const(get_lvalue_reference(value)))
+            {
+                cache = std::forward<decltype(value)>(value);
+                valid_cache = true;
+                break;
+            }
         }
     }
 
-    option<value_type> value;
+    void cache_has_value() const noexcept
+    {
+        return cache.non_empty() && valid_cache;
+    }
+
+    void invalidate_cache() noexcept
+    {
+        valid_cache = false;
+    }
+
+    option<storage> cache;
+    bool valid_cache;
 };
 
 } // cppstream namespace

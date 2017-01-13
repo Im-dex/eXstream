@@ -1,8 +1,10 @@
 #pragma once
 
-#include "constexpr_if.hpp"
 #include "detail/traits.hpp"
 #include "detail/partial_application.hpp"
+#include "detail/result_traits.hpp"
+
+#include "constexpr_if.hpp"
 #include "error_transformation.hpp"
 
 #include "map_iterator.hpp"
@@ -39,8 +41,7 @@ public:
         return constexpr_if<(is_invokable_v<const Function&, T>)>()
             .then([&](auto) noexcept
             {
-                using result = std::result_of_t<const Function&(T)>;
-                return make_transformation<map_iterator, result>(function);
+                return make_transformation<map_iterator>(function);
             })
             .else_([](auto) noexcept
             {
@@ -55,16 +56,15 @@ public:
         return constexpr_if<is_invokable_v<const Function&, T>>()
             .then([&](auto) noexcept
             {
-                using result = remove_cvr_t<std::result_of_t<const Function&(T)>>;
-                return constexpr_if<is_iterable_v<result>>()
+                using traits = result_traits<std::result_of_t<const Function&(T)>>;
+
+                return constexpr_if<is_iterable_v<typename traits::type>>()
                     .then([&](auto) noexcept
                     {
                         using allocator = typename Self::allocator;
-                        using value_type = remove_cvr_t<decltype(*std::begin(std::declval<result>()))>;
 
                         return make_transformation<
-                            partial_apply4<flat_map_iterator, allocator>::bind_4,
-                            value_type&
+                            partial_apply4<flat_map_iterator, allocator>::bind_4
                         >(function);
                     })
                     .else_([](auto) noexcept
@@ -86,7 +86,7 @@ public:
         return constexpr_if<is_callable_v<const Function&, bool, T>>()
             .then([&](auto) noexcept
             {
-                return make_transformation<filter_iterator, T>(function);
+                return make_transformation<filter_iterator>(function);
             })
             .else_([](auto) noexcept
             {
@@ -95,7 +95,6 @@ public:
             })(nothing);
     }
 
-    // TODO: allocator is not neccessary if stream is ordered
     auto distinct() const noexcept
     {
         using allocator = typename Self::allocator;
@@ -110,18 +109,18 @@ private:
         return static_cast<const Self&>(*this);
     }
 
-    template <template <typename, typename, typename> class TransformIterator,
-              typename Result,
-              typename Function>
+    template <template <typename, typename, typename> class TransformIterator, typename Function>
     auto make_transformation(const Function& function) const noexcept
     {
         using self_iterator_type = typename Self::iterator_type;
         using allocator = typename Self::allocator;
         using meta = typename Self::meta;
+
         using iterator_type = TransformIterator<self_iterator_type, Function, meta>;
         using new_meta = typename iterator_type::meta;
+        using value_type = typename iterator_type::value_type;
 
-        return transformation<Result, Self, Function, iterator_type, allocator, new_meta>(self(), function, self().get_allocator());
+        return transformation<value_type, Self, Function, iterator_type, allocator, new_meta>(self(), function, self().get_allocator());
     }
 
     template <template <typename, typename> class TransformIterator>
@@ -130,10 +129,12 @@ private:
         using self_iterator_type = typename Self::iterator_type;
         using allocator = typename Self::allocator;
         using meta = typename Self::meta;
+
         using iterator_type = TransformIterator<self_iterator_type, meta>;
         using new_meta = typename iterator_type::meta;
+        using value_type = typename iterator_type::value_type;
 
-        return independent_transformation<T, Self, iterator_type, allocator, new_meta>(self(), self().get_allocator());
+        return independent_transformation<value_type, Self, iterator_type, allocator, new_meta>(self(), self().get_allocator());
     }
 };
 

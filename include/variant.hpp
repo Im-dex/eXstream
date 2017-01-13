@@ -633,9 +633,7 @@ public:
                     }
                     else
                     {
-                        auto tmp = std::move(rhs);
-                        rhs = std::move(lhs);
-                        lhs = std::move(tmp);
+                        std::swap(lhs, rhs);
                     }
                 }
             })

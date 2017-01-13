@@ -1,6 +1,7 @@
 #pragma once
 
 #include "transform_iterator.hpp"
+#include "detail/result_traits.hpp"
 
 namespace cppstream {
 
@@ -9,15 +10,11 @@ template <typename Iterator,
           typename Meta>
 class map_iterator final : public transform_iterator<Iterator>
 {
-    using function_result = std::result_of_t<const Function&(typename Iterator::reference)>;
+    using traits = result_traits<std::result_of_t<const Function&(typename Iterator::reference)>>;
 public:
 
-    using value_type = remove_cvr_t<function_result>;
-    using reference = std::conditional_t<
-        std::is_lvalue_reference_v<function_result>,
-        function_result,
-        std::add_rvalue_reference_t<function_result>
-    >;
+    using value_type = typename traits::type;
+    using reference = typename traits::reference;
     using meta = Meta;
 
     template <typename Allocator>
@@ -40,20 +37,20 @@ public:
     map_iterator& operator= (const map_iterator&) = delete;
     map_iterator& operator= (map_iterator&&) = delete;
 
-    bool at_end() noexcept(noexcept(std::declval<const Iterator>().at_end()))
+    bool has_next() noexcept(noexcept(std::declval<const Iterator&>().has_next()))
     {
-        return iterator.at_end();
-    }
-
-    void advance() noexcept(noexcept(std::declval<Iterator>().advance()))
-    {
-        iterator.advance();
+        return iterator.has_next();
     }
 
     // TODO: replace reference to primitive type with a value type
-    reference get_value() noexcept(noexcept(std::declval<const Function&>()(std::declval<typename Iterator::reference>())))
+    reference next() noexcept(noexcept(std::declval<const Function&>()(std::declval<Iterator&>().next())))
     {
-        return function(iterator.get_value());
+        return traits::wrap(function(iterator.next()));
+    }
+
+    void skip() noexcept(noexcept(std::declval<const Iterator&>().skip()))
+    {
+        iterator.skip();
     }
 
 private:

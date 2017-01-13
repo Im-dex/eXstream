@@ -1,17 +1,21 @@
 #pragma once
 
 #include "transform_iterator.hpp"
+#include "option.hpp"
+#include "detail/scope_guard.hpp"
 
 namespace cppstream {
 namespace detail {
 namespace filter {
 
 template <typename Iterator, typename Function>
-constexpr bool is_nothrow_synchronize()
+constexpr bool is_nothrow_fetch() noexcept
 {
-    return noexcept(std::declval<Iterator>().at_end())  &&
-           noexcept(std::declval<Iterator>().advance()) &&
-           noexcept(std::declval<const Function&>()(std::declval<typename Iterator::value_type>()));
+    using function_arg = std::add_lvalue_reference_t<std::add_const_t<typename Iterator::value_type>>;
+
+    return noexcept(std::declval<Iterator>().has_next())  &&
+           noexcept(std::declval<Iterator>().next()) &&
+           noexcept(std::declval<const Function&>()(std::declval<function_arg>()));
 }
 
 }} // detail::filter namespace
@@ -30,16 +34,16 @@ public:
     template <typename Allocator>
     filter_iterator(const Iterator& iterator, const Function& function, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
         : transform_iterator(iterator),
-          function(function),
-          synchronized(false)
+          cache(),
+          function(function)
     {
     }
 
     template <typename Allocator>
     filter_iterator(Iterator&& iterator, const Function& function, const Allocator&) noexcept(std::is_nothrow_move_constructible_v<Iterator>)
         : transform_iterator(std::move(iterator)),
-          function(function),
-          synchronized(false)
+          cache(),
+          function(function)
     {
     }
 
@@ -49,39 +53,48 @@ public:
     filter_iterator& operator= (const filter_iterator&) = delete;
     filter_iterator& operator= (filter_iterator&&) = delete;
 
-    bool at_end() noexcept(detail::filter::is_nothrow_synchronize<Iterator, Function>())
+    bool has_next() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
     {
-        synchronize();
-        return iterator.at_end();
+        if (cache.empty()) fetch();
+        return iterator.has_next() || cache.non_empty();
     }
 
-    void advance() noexcept(noexcept(std::declval<Iterator>().advance()))
+    reference next() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
     {
-        iterator.advance();
-        synchronized = false;
+        if (cache.empty()) fetch();
+        CPPSTREAM_SCOPE_EXIT noexcept(std::is_nothrow_destructible_v<storage>)
+        {
+            cache.reset();
+        };
+        return cache.get().release();
     }
 
-    reference get_value() noexcept(noexcept(std::declval<Iterator>().get_value()))
+    void skip() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
     {
-        return iterator.get_value();
+        cache.reset();
+        fetch();
     }
 
 private:
 
-    void synchronize() noexcept(detail::filter::is_nothrow_synchronize<Iterator, Function>())
+    using storage = typename result_traits<reference>::storage;
+
+    void fetch() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
     {
-        if (synchronized) return;
-
-        while (!(iterator.at_end() || function(iterator.get_value())))
+        while (iterator.has_next())
         {
-            iterator.advance();
-        }
+            auto&& value = iterator.next();
 
-        synchronized = true;
+            if (function(std::as_const(get_lvalue_reference(value))))
+            {
+                cache = std::forward<decltype(value)>(value);
+                break;
+            }
+        }
     }
 
+    option<storage> cache;
     const Function& function;
-    bool synchronized;
 };
 
 } // cppstream namespace

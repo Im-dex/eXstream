@@ -11,19 +11,11 @@ namespace cppstream {
 template <typename BeginIterator, typename EndIterator>
 class iterator final
 {
-    static_assert(std::is_default_constructible_v<BeginIterator>, "Begin iterator should be default constructible");
-    static_assert(std::is_default_constructible_v<EndIterator>, "End iterator should be default constructible");
     static_assert(is_comparable_to_v<BeginIterator, EndIterator>, "Iterators should be comparable");
 public:
 
     using value_type = typename std::iterator_traits<BeginIterator>::value_type;
     using reference = typename std::iterator_traits<BeginIterator>::reference;
-
-    iterator() noexcept(std::is_nothrow_default_constructible_v<BeginIterator> && std::is_nothrow_default_constructible_v<EndIterator>)
-        : beginIterator(),
-          endIterator()
-    {
-    }
 
     iterator(const BeginIterator& beginIterator, const EndIterator& endIterator) noexcept(std::is_nothrow_copy_constructible_v<BeginIterator> &&
                                                                                           std::is_nothrow_copy_constructible_v<EndIterator>)
@@ -45,21 +37,21 @@ public:
     iterator& operator= (const iterator&) = delete;
     iterator& operator= (iterator&&) = delete;
 
-    bool at_end() const noexcept(is_nothrow_comparable_to_v<const BeginIterator, const EndIterator>)
+    bool has_next() const noexcept(is_nothrow_comparable_to_v<const BeginIterator, const EndIterator>)
     {
-        return beginIterator == endIterator;
+        return beginIterator != endIterator;
     }
 
-    void advance() noexcept(noexcept(++std::declval<BeginIterator>()))
+    reference next() noexcept(noexcept(*(std::declval<BeginIterator&>()++)))
     {
-        assert(!at_end() && "Iterator is out of range");
+        assert(has_next() && "Iterator is out of range");
+        return *(beginIterator++);
+    }
+
+    void skip() noexcept(noexcept(++std::declval<BeginIterator&>()))
+    {
+        assert(has_next() && "Iterator is out of range");
         ++beginIterator;
-    }
-
-    reference get_value() noexcept(noexcept(*std::declval<BeginIterator>()))
-    {
-        assert(!at_end() && "Iterator is out of range");
-        return *beginIterator;
     }
 
 private:
