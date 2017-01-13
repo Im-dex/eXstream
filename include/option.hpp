@@ -387,15 +387,16 @@ public:
         return !(*this == that);
     }
 
-    // TODO: test
     template <typename... Args>
     void emplace(Args&&... args) noexcept(std::is_nothrow_destructible_v<T> && std::is_nothrow_constructible_v<T, Args...>)
     {
         constexpr_if<std::is_constructible_v<T, Args...>>()
-            .then([](auto&&... args) noexcept(std::is_nothrow_destructible_v<T> && std::is_nothrow_constructible_v<T, decltype(args)...>)
+            .then([this](auto&&... args) noexcept(std::is_nothrow_destructible_v<T> &&
+                                                  std::is_nothrow_constructible_v<T, decltype(args)...>)
             {
                 if (non_empty()) destroy();
                 construct(std::forward<decltype(args)>(args)...);
+                emptyFlag = false;
             })
             .else_([](auto...) noexcept
             {
@@ -423,7 +424,7 @@ public:
         return value();
     }
     
-    T get() && noexcept
+    T&& get() && noexcept
     {
         assert(non_empty());
         return std::move(value());
@@ -439,9 +440,9 @@ public:
         return empty() ? $default : value();
     }
     
-    T get_or_else(T&& $default) && noexcept
+    T&& get_or_else(T&& $default) && noexcept
     {
-        return empty() ? $default : std::move(value());
+        return std::move(empty() ? $default : value());
     }
     
     template <typename E>
@@ -477,7 +478,7 @@ public:
     }
     
     template <typename E>
-    T get_or_throw() &&
+    T&& get_or_throw() &&
     {
         constexpr_if<std::is_default_constructible_v<E>>()
             .then([&](auto)
@@ -507,15 +508,21 @@ public:
     }
     
     template <typename E>
-    T get_or_throw(E&& exception) const &&
+    T&& get_or_throw(E&& exception) &&
     {
         if (empty()) throw std::forward<E>(exception);
         return std::move(value());
     }
+    
+    explicit operator bool() const noexcept
+    {
+        return non_empty();
+    }
 
-    void swap(option& that) noexcept(std::is_nothrow_swappable_v<T&>         &&
-                                     std::is_nothrow_move_constructible_v<T> &&
-                                     std::is_nothrow_destructible_v<T>)
+    // NOTE: workaround for msvc and gcc bugs
+    static void swap(option& lhs, option& rhs) noexcept(std::is_nothrow_swappable_v<T&>         &&
+                                                        std::is_nothrow_move_constructible_v<T> &&
+                                                        std::is_nothrow_destructible_v<T>)
     {
         constexpr_if<std::is_swappable_v<T&> && std::is_move_constructible_v<T>>()
             .then([&](auto) noexcept(std::is_nothrow_swappable_v<T&>         &&
@@ -524,18 +531,18 @@ public:
             {
                 using std::swap;
 
-                if (!(empty() && that.empty()))
+                if (!(lhs.empty() && rhs.empty()))
                 {
-                    if (non_empty() && that.non_empty()) swap(value(), that.value());
-                    else if (empty())
+                    if (lhs.non_empty() && rhs.non_empty()) swap(lhs.value(), rhs.value());
+                    else if (lhs.empty())
                     {
-                        initialize(std::move(that.value()));
-                        that.reset();
+                        lhs.initialize(std::move(rhs.value()));
+                        rhs.reset();
                     }
                     else
                     {
-                        that.initialize(std::move(value()));
-                        reset();
+                        rhs.initialize(std::move(lhs.value()));
+                        lhs.reset();
                     }
                 }
             })
@@ -545,25 +552,21 @@ public:
             })(nothing);
     }
 
-    void swap(T& that) noexcept(std::is_nothrow_swappable_v<T&> && std::is_nothrow_move_constructible_v<T>)
+    static void swap(option& lhs, T& rhs) noexcept(std::is_nothrow_swappable_v<T&> &&
+                                                   std::is_nothrow_move_constructible_v<T>)
     {
         constexpr_if<std::is_swappable_v<T&> && std::is_move_constructible_v<T>>()
             .then([&](auto) noexcept(std::is_nothrow_swappable_v<T&> &&
                                      std::is_nothrow_move_constructible_v<T>)
             {
                 using std::swap;
-    
-                if (empty()) initialize(std::move(that)); else swap(value(), that);
+                if (lhs.empty()) lhs.initialize(std::move(rhs));
+                else             swap(lhs.value(), rhs);
             })
             .else_([](auto) noexcept
             {
                 static_assert(false, "Optional type should be swapable and move constructible");
             })(nothing);
-    }
-    
-    explicit operator bool() const noexcept
-    {
-        return non_empty();
     }
 
 #pragma region iterators
@@ -634,7 +637,7 @@ private:
 
     template <typename U>
     friend struct std::hash;
-    
+
     const T* pointer() const noexcept
     {
         return reinterpret_cast<const T*>(std::addressof(storage));
@@ -679,7 +682,7 @@ private:
     }
     
     template <typename U>
-    void assign(U&& object) noexcept(std::is_nothrow_assignable_v<T, U>)
+    void assign(U&& object) noexcept(std::is_nothrow_assignable_v<T&, U>)
     {
         value() = std::forward<U>(object);
     }
@@ -704,6 +707,57 @@ private:
     bool emptyFlag;
 };
 
+template <typename T>
+bool operator== (none_t, const option<T>& opt) noexcept
+{
+    return opt.empty();
+}
+
+template <typename T>
+bool operator== (const T& lhs, const option<T>& rhs) noexcept(noexcept(rhs == lhs))
+{
+    return rhs == lhs;
+}
+
+template <typename T>
+void swap(option<T>& lhs, option<T>& rhs) noexcept(noexcept(option<T>::swap(lhs, rhs)))
+{
+    option<T>::swap(lhs, rhs);
+}
+
+template <typename T>
+void swap(option<T>& lhs, T& rhs) noexcept(noexcept(option<T>::swap(lhs, rhs)))
+{
+    option<T>::swap(lhs, rhs);
+}
+
+template <typename T>
+void swap(T& lhs, option<T>& rhs) noexcept(noexcept(option<T>::swap(rhs, lhs)))
+{
+    option<T>::swap(rhs, lhs);
+}
+
+template <typename T>
+option<remove_cvr_t<T>> some(T&& value) noexcept(std::is_nothrow_constructible_v<remove_cvr_t<T>, T>)
+{
+    return option<remove_cvr_t<T>>(std::forward<T>(value));
+}
+
+CPPSTREAM_FORCEINLINE
+constexpr none_t none() noexcept
+{
+    return none_t();
+}
+
+template <typename T, typename... Ts>
+option<T> make_option(Ts&&... args) noexcept(std::is_nothrow_constructible_v<T, Ts...>)
+{
+    return option<T>(in_place, std::forward<Ts>(args)...);
+}
+
+//=======================================pointer==========================================
+
+// TODO: merge with main
 template <typename T>
 class option<T*> final
 {
@@ -915,13 +969,15 @@ private:
     bool empty;
 };
 
+//=======================================reference==========================================
+
 template <typename T>
 class option<T&> final
 {
 public:
 
     using value_type = T&;
-    using const_value_type = std::add_rvalue_reference_t<std::add_const_t<T>>;
+    using const_value_type = std::add_lvalue_reference_t<std::add_const_t<T>>;
     using iterator = option_iterator<T>;
     using const_iterator = const_option_iterator<T>;
     using reverse_iterator = iterator;
@@ -1023,7 +1079,7 @@ public:
 
     size_t size() const noexcept
     {
-        return empty() ? 0 : 1;
+        return empty() ? size_t(0) : size_t(1);
     }
 
     bool empty() const noexcept
@@ -1193,6 +1249,12 @@ private:
     T* pointer;
 };
 
+template <typename T>
+option<T&> someRef(T& reference) noexcept
+{
+    return option<T&>(reference);
+}
+
 /*template <typename T>
 class option<not_null<T>> final
 {
@@ -1218,29 +1280,6 @@ private:
 };*/
 
 template <typename T>
-option<remove_cvr_t<T>> some(T&& value) noexcept(std::is_nothrow_constructible_v<remove_cvr_t<T>, T>)
-{
-    return option<remove_cvr_t<T>>(std::forward<T>(value));
-}
-
-template <typename T>
-option<T> someRef(T& reference) noexcept
-{
-    return option<T>(reference);
-}
-
-CPPSTREAM_FORCEINLINE constexpr none_t none() noexcept
-{
-    return none_t();
-}
-
-template <typename T, typename... Ts>
-option<T> make_option(Ts&&... args) noexcept(std::is_nothrow_constructible_v<T, Ts...>)
-{
-    return option<T>(in_place, std::forward<Ts>(args)...);
-}
-
-template <typename T>
 struct container_traits<option<T>>
 {
     static constexpr bool is_ordered = true;
@@ -1251,24 +1290,6 @@ struct container_traits<option<T>>
 } // cppstream namespace
 
 namespace std {
-
-template <typename T>
-void swap(cppstream::option<T>& a, cppstream::option<T>& b) noexcept(noexcept(a.swap(b)))
-{
-    a.swap(b);
-}
-
-template <typename T>
-void swap(cppstream::option<T>& option, T& value) noexcept(noexcept(option.swap(value)))
-{
-    option.swap(value);
-}
-
-template <typename T>
-void swap(T& value, cppstream::option<T>& option) noexcept(noexcept(option.swap(value)))
-{
-    option.swap(value);
-}
 
 template <typename T>
 struct hash<cppstream::option<T>>

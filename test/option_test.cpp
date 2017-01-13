@@ -7,22 +7,22 @@ using namespace testing;
 
 #define TEST_CASE_NAME OptionTest
 
-struct TestException : public std::exception
+struct test_exception : std::exception
 {
-    TestException() noexcept
+    test_exception() noexcept
         : exception("Test exception")
     {
     }
 };
 
-struct ComplexConstructible final
+struct complex_constructible final
 {
-    ComplexConstructible(const int a, const double b) noexcept
+    complex_constructible(const int a, const double b) noexcept
         : a(a),
           b(b)
     {}
 
-    bool operator== (const ComplexConstructible& that) const noexcept
+    bool operator== (const complex_constructible& that) const noexcept
     {
         return (a == that.a) && (b == that.b);
     }
@@ -31,24 +31,24 @@ struct ComplexConstructible final
     double b;
 };
 
-struct NonCopyable final
+struct non_copyable final
 {
-    NonCopyable() = default;
-    NonCopyable(const NonCopyable&) = delete;
-    NonCopyable(NonCopyable&&) = default;
+    non_copyable() = default;
+    non_copyable(const non_copyable&) = delete;
+    non_copyable(non_copyable&&) = default;
 
-    NonCopyable& operator= (const NonCopyable&) = delete;
-    NonCopyable& operator= (NonCopyable&&) = default;
+    non_copyable& operator= (const non_copyable&) = delete;
+    non_copyable& operator= (non_copyable&&) = default;
 };
 
-struct NonMovable final
+struct non_movable final
 {
-    NonMovable() = default;
-    NonMovable(const NonMovable&) = default;
-    NonMovable(NonMovable&&) = delete;
+    non_movable() = default;
+    non_movable(const non_movable&) = default;
+    non_movable(non_movable&&) = delete;
 
-    NonMovable& operator= (const NonMovable&) = default;
-    NonMovable& operator= (NonMovable&&) = delete;
+    non_movable& operator= (const non_movable&) = default;
+    non_movable& operator= (non_movable&&) = delete;
 };
 
 TEST(TEST_CASE_NAME, ConstructorTest)
@@ -63,8 +63,8 @@ TEST(TEST_CASE_NAME, ConstructorTest)
     EXPECT_THAT(option<int>(value).get(), Eq(1));
     EXPECT_THAT(option<int>(some(1)).get(), Eq(1));
 
-    EXPECT_THAT(option<ComplexConstructible>(in_place, 0, .0).get(), Eq(ComplexConstructible(0, .0)));
-    EXPECT_THAT(make_option<ComplexConstructible>(0, .0), Eq(ComplexConstructible(0, .0)));
+    EXPECT_THAT(option<complex_constructible>(in_place, 0, .0).get(), Eq(complex_constructible(0, .0)));
+    EXPECT_THAT(make_option<complex_constructible>(0, .0), Eq(complex_constructible(0, .0)));
 }
 
 TEST(TEST_CASE_NAME, AssignmentTest)
@@ -91,6 +91,13 @@ TEST(TEST_CASE_NAME, AssignmentTest)
     EXPECT_THAT(value, IsEmpty());
 }
 
+TEST(TEST_CASE_NAME, emplace_Test)
+{
+    option<int> value(none());
+    value.emplace(22);
+    EXPECT_THAT(value.get(), Eq(22));
+}
+
 TEST(TEST_CASE_NAME, ComparisonTest)
 {
     auto value = some(1);
@@ -104,7 +111,7 @@ TEST(TEST_CASE_NAME, ComparisonTest)
     EXPECT_THAT(value2, Not(Eq(0)));
 }
 
-TEST(TEST_CASE_NAME, SizeTest)
+TEST(TEST_CASE_NAME, size_Test)
 {
     option<int> empty(none());
     option<int> nonEmpty(some(1));
@@ -118,39 +125,41 @@ TEST(TEST_CASE_NAME, SizeTest)
     EXPECT_TRUE(nonEmpty.non_empty());
 }
 
-TEST(TEST_CASE_NAME, GetTest)
+TEST(TEST_CASE_NAME, get_Test)
 {
     option<int> empty(none());
 
     EXPECT_THAT(some(1).get(), Eq(1));
     EXPECT_THAT(some(2).get_or_else(0), Eq(2));
     EXPECT_THAT(empty.get_or_else(2), Eq(2));
-    EXPECT_THAT(some(0).get_or_throw<TestException>(), Eq(0));
-    EXPECT_THAT(some(0).get_or_throw(TestException()), Eq(0));
+    EXPECT_THAT(some(0).get_or_throw<test_exception>(), Eq(0));
+    EXPECT_THAT(some(0).get_or_throw(test_exception()), Eq(0));
 
 #ifdef STREAM_DEBUG
     EXPECT_ANY_DEATH(empty.get());
 #endif
-    EXPECT_THROW(empty.get_or_throw<TestException>(), TestException);
-    EXPECT_THROW(empty.get_or_throw(TestException()), TestException);
+    EXPECT_THROW(empty.get_or_throw<test_exception>(), test_exception);
+    EXPECT_THROW(empty.get_or_throw(test_exception()), test_exception);
 }
 
-TEST(TEST_CASE_NAME, SwapTest)
+TEST(TEST_CASE_NAME, swap_Test)
 {
+    using std::swap;
+
     auto value = some(2);
     auto value2 = some(10);
 
-    std::swap(value, value2);
+    swap(value, value2);
     EXPECT_THAT(value, Eq(10));
     EXPECT_THAT(value2, Eq(2));
 
     int intValue = 4;
-    std::swap(value, intValue);
+    swap(value, intValue);
     EXPECT_THAT(value, Eq(4));
     EXPECT_THAT(intValue, Eq(10));
 }
 
-TEST(TEST_CASE_NAME, HashTest)
+TEST(TEST_CASE_NAME, hash_Test)
 {
     std::hash<int> intHasher;
     std::hash<option<int>> hasher;
@@ -199,8 +208,8 @@ TEST(TEST_CASE_NAME, IteratorTest)
 
 TEST(TEST_CASE_NAME, CompilationTest)
 {
-    NonMovable value;
+    non_movable value;
 
-    some(NonCopyable{});
+    some(non_copyable{});
     some(value);
 }

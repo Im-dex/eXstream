@@ -9,9 +9,15 @@ template <typename Iterator,
           typename Meta>
 class map_iterator final : public transform_iterator<Iterator>
 {
+    using function_result = std::result_of_t<const Function&(typename Iterator::reference)>;
 public:
 
-    using value_type = std::result_of_t<const Function&(typename Iterator::value_type)>;
+    using value_type = remove_cvr_t<function_result>;
+    using reference = std::conditional_t<
+        std::is_lvalue_reference_v<function_result>,
+        function_result,
+        std::add_rvalue_reference_t<function_result>
+    >;
     using meta = Meta;
 
     template <typename Allocator>
@@ -34,7 +40,7 @@ public:
     map_iterator& operator= (const map_iterator&) = delete;
     map_iterator& operator= (map_iterator&&) = delete;
 
-    bool at_end() /*TODO: const*/ noexcept(noexcept(std::declval<const Iterator>().at_end()))
+    bool at_end() noexcept(noexcept(std::declval<const Iterator>().at_end()))
     {
         return iterator.at_end();
     }
@@ -45,7 +51,7 @@ public:
     }
 
     // TODO: replace reference to primitive type with a value type
-    value_type get_value() noexcept(noexcept(std::declval<const Function&>()(std::declval<typename Iterator::value_type>())))
+    reference get_value() noexcept(noexcept(std::declval<const Function&>()(std::declval<typename Iterator::reference>())))
     {
         return function(iterator.get_value());
     }

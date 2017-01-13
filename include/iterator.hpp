@@ -16,7 +16,8 @@ class iterator final
     static_assert(is_comparable_to_v<BeginIterator, EndIterator>, "Iterators should be comparable");
 public:
 
-    using value_type = decltype(*std::declval<BeginIterator>());
+    using value_type = typename std::iterator_traits<BeginIterator>::value_type;
+    using reference = typename std::iterator_traits<BeginIterator>::reference;
 
     iterator() noexcept(std::is_nothrow_default_constructible_v<BeginIterator> && std::is_nothrow_default_constructible_v<EndIterator>)
         : beginIterator(),
@@ -44,20 +45,20 @@ public:
     iterator& operator= (const iterator&) = delete;
     iterator& operator= (iterator&&) = delete;
 
-    bool at_end() noexcept(is_nothrow_comparable_to_v<const BeginIterator, const EndIterator>)
+    bool at_end() const noexcept(is_nothrow_comparable_to_v<const BeginIterator, const EndIterator>)
     {
         return beginIterator == endIterator;
     }
 
     void advance() noexcept(noexcept(++std::declval<BeginIterator>()))
     {
-        assert(!at_end() && "End of range");
+        assert(!at_end() && "Iterator is out of range");
         ++beginIterator;
     }
 
-    value_type get_value() noexcept(noexcept(*std::declval<BeginIterator>()))
+    reference get_value() noexcept(noexcept(*std::declval<BeginIterator>()))
     {
-        assert(!at_end() && "End of range");
+        assert(!at_end() && "Iterator is out of range");
         return *beginIterator;
     }
 
@@ -67,4 +68,17 @@ private:
     EndIterator endIterator;
 };
 
+namespace detail {
+
+template <typename BeginIterator, typename EndIterator>
+using iterator_type = iterator<std::decay_t<BeginIterator>, std::decay_t<EndIterator>>;
+
+template <typename BeginIterator, typename EndIterator>
+auto make_iterator(BeginIterator&& begin, EndIterator&& end)
+    noexcept(std::is_nothrow_constructible_v<iterator_type<BeginIterator, EndIterator>, BeginIterator, EndIterator>)
+{
+    return iterator_type<BeginIterator, EndIterator>(std::forward<BeginIterator>(begin), std::forward<EndIterator>(end));
+}
+
+} // detail namespace
 } // cppstream namespace

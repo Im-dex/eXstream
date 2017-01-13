@@ -24,13 +24,6 @@ public:
     {
     }
 
-    explicit stream(Iterator&& iterator, Allocator&& alloc) noexcept(std::is_nothrow_move_constructible_v<Iterator> &&
-                                                                     std::is_nothrow_move_constructible_v<Allocator>)
-        : alloc(std::move(alloc)),
-          iterator(std::move(iterator))
-    {
-    }
-
     stream(stream&&) = default; // TODO: hide from user
 
     stream(const stream&) = delete;
@@ -57,4 +50,23 @@ private:
     Iterator iterator;
 };
 
+namespace detail {
+
+template <typename Allocator, typename Meta, typename Iterator>
+using stream_type = stream<
+    typename std::decay_t<Iterator>::value_type,
+    std::decay_t<Iterator>,
+    Allocator,
+    Meta
+>;
+
+template <typename Meta, typename Iterator, typename Allocator>
+auto make_stream(Iterator&& iterator, const Allocator& alloc)
+    noexcept(std::is_nothrow_constructible_v<stream_type<Allocator, Meta, Iterator>, Iterator, const Allocator&>)
+{
+    return stream_type<Allocator, Meta, Iterator>(std::forward<Iterator>(iterator), alloc);
+}
+
+
+} // detail namespace
 } // cppstream namespace

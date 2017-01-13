@@ -158,3 +158,13 @@ TEST(TEST_CASE_NAME, has_type_Test)
     EXPECT_FALSE(has_value_type_member<int>::value);
     EXPECT_FALSE(has_value_type_member_v<NoValueType>);
 }
+
+TEST(TEST_CASE_NAME, is_reference_wrapper_Test)
+{
+    EXPECT_TRUE(is_reference_wrapper_v<std::reference_wrapper<int>>);
+    EXPECT_TRUE(is_reference_wrapper_v<decltype(std::ref(std::declval<int&>()))>);
+    EXPECT_TRUE(is_reference_wrapper_v<decltype(std::cref(std::declval<std::string&>()))>);
+
+    EXPECT_FALSE(is_reference_wrapper_v<int&>);
+    EXPECT_FALSE(is_reference_wrapper_v<const std::string&>);
+}

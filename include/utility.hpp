@@ -2,25 +2,30 @@
 
 namespace cppstream {
 
-class in_place_t final {};
-constexpr const auto in_place = in_place_t();
+struct in_place_t final {};
+constexpr auto in_place = in_place_t();
 
 template <typename T>
-class in_place_type_t final {};
+struct in_place_type_t final
+{
+    using type = T;
+};
 
-template <typename T>
-constexpr const auto in_place_type = in_place_type_t<T>();
+// TODO: ICE
+/*template <typename T>
+constexpr auto in_place_type = in_place_type_t<T>();*/
 
 class nothing_t final {};
-constexpr const auto nothing = nothing_t();
+constexpr auto nothing = nothing_t();
 
 template <typename T>
 struct type_t final
 {
-    constexpr type_t() = default;
+    using type = T;
 };
 
-template <typename T>
-constexpr const auto type = type_t<T>();
+// TODO: ICE under MSVC 2015
+/*template <typename T>
+constexpr type_t<T> type = type_t<T>();*/
 
 } // cppstream namespace

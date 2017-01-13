@@ -63,10 +63,10 @@ template <typename T>
 using remove_cvr_t = typename remove_cvr<T>::type;
 
 template <typename T, typename U, typename AlwaysVoid = std::void_t<>>
-struct is_comparable_to : public std::false_type {};
+struct is_comparable_to : std::false_type {};
 
 template <typename T, typename U>
-struct is_comparable_to<T, U, std::void_t<decltype(std::declval<T>() == std::declval<U>())>> : public std::true_type {};
+struct is_comparable_to<T, U, std::void_t<decltype(std::declval<T>() == std::declval<U>())>> : std::true_type {};
 
 template <typename T, typename U>
 constexpr bool is_comparable_to_v = is_comparable_to<T, U>::value;
@@ -78,10 +78,10 @@ template <typename T>
 constexpr bool is_comparable_v = is_comparable<T>::value;
 
 template <typename T, typename U, bool AlwaysVoid = is_comparable_to_v<T, U>>
-struct is_nothrow_comparable_to : public std::false_type {};
+struct is_nothrow_comparable_to : std::false_type {};
 
 template <typename T, typename U>
-struct is_nothrow_comparable_to<T, U, true> : public std::bool_constant<noexcept(std::declval<T>() == std::declval<U>())> {};
+struct is_nothrow_comparable_to<T, U, true> : std::bool_constant<noexcept(std::declval<T>() == std::declval<U>())> {};
 
 template <typename T, typename U>
 constexpr bool is_nothrow_comparable_to_v = is_nothrow_comparable_to<T, U>::value;
@@ -161,5 +161,14 @@ using is_invokable = typename detail::is_invokable<F, Args...>::result;
 
 template <typename F, typename... Args>
 constexpr bool is_invokable_v = is_invokable<F, Args...>::value;
+
+template <typename T>
+struct is_reference_wrapper : std::false_type {};
+
+template <typename T>
+struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
+
+template <typename T>
+constexpr bool is_reference_wrapper_v = is_reference_wrapper<T>::value;
 
 } // cppstream namespace

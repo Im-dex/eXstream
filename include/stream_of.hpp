@@ -6,35 +6,7 @@
 #include "meta_info.hpp"
 
 namespace cppstream {
-namespace detail {
-namespace stream_of {
-
-template <typename Iterable>
-using iterable_type = std::conditional_t<std::is_lvalue_reference_v<Iterable>,
-                                         std::add_lvalue_reference_t<std::add_const_t<std::remove_reference_t<Iterable>>>,
-                                         std::add_lvalue_reference_t<std::remove_reference_t<Iterable>>>;
-
-template <typename Iterable, bool IsIterable = false>
-struct is_stream_nothrow_constructible final
-{
-    static constexpr bool result = false;
-};
-
-template <typename Iterable>
-struct is_stream_nothrow_constructible<Iterable, true> final
-{
-    using iterable = iterable_type<Iterable>;
-    using begin_iterator = decltype(std::begin(std::declval<iterable>()));
-    using end_iterator = decltype(std::end(std::declval<iterable>()));
-
-    static constexpr bool result = noexcept(std::begin(std::declval<Iterable>()))       &&
-                                   noexcept(std::end(std::declval<Iterable>()))         &&
-                                   std::is_nothrow_move_constructible_v<begin_iterator> &&
-                                   std::is_nothrow_move_constructible_v<end_iterator>;
-};
-
-template <typename Iterable>
-constexpr bool is_stream_nothrow_constructible_v = is_stream_nothrow_constructible<Iterable, is_iterable_v<remove_cvr_t<Iterable>>>::result;
+namespace stream_of_detail {
 
 template <typename Traits, bool IsOrdered = false>
 struct order_selector
@@ -49,9 +21,9 @@ struct order_selector<Traits, true>
 };
 
 template <typename Iterable>
-class meta_builder final
+class build_meta final
 {
-    using traits = container_traits<Iterable>;
+    using traits = container_traits<remove_cvr_t<Iterable>>; // TODO: decay?
 public:
 
     using type = meta_info<
@@ -61,25 +33,65 @@ public:
     >;
 };
 
-}} // detail::stream_of namespasce
+template <typename Iterable>
+using build_meta_t = typename build_meta<Iterable>::type;
+
+template <typename Iterable, typename Allocator, bool IsRvalueReference, bool IsIterable = false>
+struct is_stream_nothrow_constructible final
+{
+    static constexpr bool result = false;
+};
+
+template <typename Iterable, typename Allocator>
+struct is_stream_nothrow_constructible<Iterable, Allocator, true /*IsRvalueReference*/, true /*IsIterable*/> final
+{
+    static constexpr bool result = noexcept(
+        detail::make_stream<build_meta<Iterable>>(
+            detail::make_iterator(std::make_move_iterator(std::begin(std::declval<Iterable>())),
+                                  std::make_move_iterator(std::end(std::declval<Iterable>()))),
+            std::declval<const Allocator&>()
+        )
+    );
+};
+
+template <typename Iterable, typename Allocator>
+struct is_stream_nothrow_constructible<Iterable, Allocator, false /*IsRvalueReference*/, true /*IsIterable*/> final
+{
+    static constexpr bool result = noexcept(
+        detail::make_stream<build_meta<Iterable>>(
+            detail::make_iterator(std::cbegin(std::declval<Iterable>()), std::cend(std::declval<Iterable>())),
+            std::declval<const Allocator&>()
+        )
+    );
+};
+
+template <typename Iterable, typename Allocator>
+constexpr bool is_stream_nothrow_constructible_v = is_stream_nothrow_constructible<Iterable, Allocator,
+                                                                                   std::is_rvalue_reference_v<Iterable>,
+                                                                                   is_iterable_v<remove_cvr_t<Iterable>>>::result;
+} // stream_of_detail namespasce
 
 template <typename Allocator = std::allocator<unsigned char> /* TODO: maybe take from iterable??? */,
           typename T>
-auto stream_of(T&& iterable, const Allocator& alloc = Allocator()) noexcept(detail::stream_of::is_stream_nothrow_constructible_v<T>)
+auto stream_of(T&& iterable, const Allocator& alloc = Allocator()) noexcept(stream_of_detail::is_stream_nothrow_constructible_v<T, Allocator>)
 {
     return constexpr_if<is_iterable_v<remove_cvr_t<T>>>()
-        .then([](auto&& iterable, const auto& alloc) noexcept(detail::stream_of::is_stream_nothrow_constructible_v<decltype(iterable)>)
+        .then([](auto&& iterable, const auto& alloc) noexcept(stream_of_detail::is_stream_nothrow_constructible_v<decltype(iterable), std::decay_t<decltype(alloc)>>)
         {
-            detail::stream_of::iterable_type<decltype(iterable)> ref = iterable;
+            auto&& iterator = constexpr_if<std::is_rvalue_reference_v<decltype(iterable)>>()
+                .then([&](auto) noexcept(noexcept(detail::make_iterator(std::make_move_iterator(std::begin(iterable)),
+                                                                        std::make_move_iterator(std::end(iterable)))))
+                {
+                    return detail::make_iterator(std::make_move_iterator(std::begin(iterable)),
+                                                 std::make_move_iterator(std::end(iterable)));
+                })
+                .else_([&](auto) noexcept(noexcept(detail::make_iterator(std::cbegin(iterable), std::cend(iterable))))
+                {
+                    return detail::make_iterator(std::cbegin(iterable), std::cend(iterable));
+                })(nothing);
 
-            using begin_iterator = decltype(std::begin(ref));
-            using end_iterator = decltype(std::end(ref));
-            using value_type = decltype(*std::declval<begin_iterator>());
-            using iterator_type = iterator<begin_iterator, end_iterator>;
-            using meta = typename detail::stream_of::meta_builder<remove_cvr_t<decltype(iterable)>>::type;
-
-            // TODO: move_iterator
-            return stream<value_type, iterator_type, Allocator, meta>(iterator_type(std::begin(ref), std::end(ref)), alloc);
+            using meta = stream_of_detail::build_meta_t<decltype(iterable)>;
+            return detail::make_stream<meta>(std::forward<decltype(iterator)>(iterator), alloc);
         })
         .else_([](auto, auto) noexcept
         {

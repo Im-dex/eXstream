@@ -21,6 +21,7 @@ class distinct_iterator final : public transform_iterator<Iterator>
 public:
 
     using value_type = typename Iterator::value_type;
+    using reference = typename Iterator::reference;
     // TODO: maybe use simple set to preserve order???
     using meta = meta_info<false, true, Order::Ascending>; // TODO: custom comparator can change this
 
@@ -28,23 +29,20 @@ private:
 
     using set_value = remove_cvr_t<value_type>;
     using set_type = std::unordered_set<set_value, std::hash<set_value>, std::equal_to<set_value>, Allocator>;
-    using set_iterator = typename set_type::iterator;
 
 public:
 
     explicit distinct_iterator(const Iterator& iterator, const Allocator& alloc)
         : transform_iterator(iterator),
           set(0, alloc),
-          iterator(),
-          selected(false)
+          element()
     {
     }
 
     explicit distinct_iterator(Iterator&& iterator, const Allocator& alloc)
         : transform_iterator(std::move(iterator)),
           set(0, alloc),
-          iterator(),
-          selected(false)
+          element()
     {
     }
 
@@ -53,45 +51,56 @@ public:
     distinct_iterator(const distinct_iterator&) = delete;
     distinct_iterator& operator= (const distinct_iterator&) = delete;
 
-    bool at_end() // TODO: const?
+    bool at_end()
     {
-        select();
-        return iterator == std::end(set);
+        skip_duplicates();
+        return iterator.at_end();
     }
 
-    void advance()
+    void advance() noexcept(noexcept(std::declval<Iterator>().advance()))
     {
-        select();
-        ++iterator;
+        iterator.advance();
     }
 
-    value_type get_value()
+    reference get_value()
     {
-        select();
-        return std::move(*iterator);
+        return element.empty() ? iterator.get_value()
+                               : std::move(element).get();
     }
 
 private:
 
-    void select()
+    // TODO: forward size if possible and then reserve
+    // TODO: set.reserve(???);
+
+    void skip_duplicates()
     {
-        if (selected) return;
-
-        // TODO: forward size if possible and then reserve
-        // TODO: set.reserve(???);
-
-        while (!range.at_end())
+        while (!iterator.at_end())
         {
-            set.insert(range.get_value());
-        }
+            auto&& value = iterator.get_value();
 
-        iterator = std::begin(set);
-        selected = true;
+            if (set.find(value) == set.end())
+            {
+                set.insert(value);
+                store_element(std::forward<decltype(value)>(value));
+                break;
+            }
+
+            iterator.advance();
+        }
+    }
+
+    static void store_element(const value_type&) noexcept
+    {
+    }
+
+    void store_element(value_type&& value) noexcept(noexcept(std::declval<option<value_type>&>() = std::move(value)))
+    {
+        element = std::move(value);
     }
 
     set_type set;
-    set_iterator iterator;
-    bool selected;
+    option<value_type> element;
 };
 
 template <typename Iterator,
@@ -120,7 +129,7 @@ public:
     distinct_iterator(const distinct_iterator&) = delete;
     distinct_iterator& operator= (const distinct_iterator&) = delete;
 
-    bool at_end() /*TODO: const*/ noexcept(noexcept(std::declval<Iterator>().at_end()))
+    bool at_end() noexcept(noexcept(std::declval<Iterator>().at_end()))
     {
         return iterator.at_end();
     }
@@ -181,7 +190,7 @@ public:
     distinct_iterator(const distinct_iterator&) = delete;
     distinct_iterator& operator= (const distinct_iterator&) = delete;
 
-    bool at_end() /*TODO: const*/ noexcept(detail::distinct::is_nothrow_find_next<Iterator>())
+    bool at_end() noexcept(detail::distinct::is_nothrow_find_next<Iterator>())
     {
         find_next();
         return iterator.at_end() && value.empty();

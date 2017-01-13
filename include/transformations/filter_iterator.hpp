@@ -24,6 +24,7 @@ class filter_iterator final : public transform_iterator<Iterator>
 public:
 
     using value_type = typename Iterator::value_type;
+    using reference = typename Iterator::reference;
     using meta = Meta;
 
     template <typename Allocator>
@@ -48,21 +49,20 @@ public:
     filter_iterator& operator= (const filter_iterator&) = delete;
     filter_iterator& operator= (filter_iterator&&) = delete;
 
-    bool at_end() /*TODO: const*/ noexcept(detail::filter::is_nothrow_synchronize<Iterator, Function>())
+    bool at_end() noexcept(detail::filter::is_nothrow_synchronize<Iterator, Function>())
     {
         synchronize();
         return iterator.at_end();
     }
 
-    void advance() noexcept(detail::filter::is_nothrow_synchronize<Iterator, Function>())
+    void advance() noexcept(noexcept(std::declval<Iterator>().advance()))
     {
         iterator.advance();
         synchronized = false;
     }
 
-    value_type get_value() noexcept(detail::filter::is_nothrow_synchronize<Iterator, Function>())
+    reference get_value() noexcept(noexcept(std::declval<Iterator>().get_value()))
     {
-        synchronize();
         return iterator.get_value();
     }
 
