@@ -45,7 +45,7 @@ public:
     // TODO: replace reference to primitive type with a value type
     reference next() noexcept(noexcept(std::declval<const Function&>()(std::declval<Iterator&>().next())))
     {
-        return traits::wrap(function(iterator.next()));
+        return traits::unwrap(function(iterator.next()));
     }
 
     void skip() noexcept(noexcept(std::declval<const Iterator&>().skip()))

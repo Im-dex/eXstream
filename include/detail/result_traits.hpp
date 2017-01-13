@@ -170,7 +170,7 @@ struct result_traits
 
     using storage = detail::value_storage<T>;
 
-    static reference wrap(T&& ref) noexcept
+    static reference unwrap(T&& ref) noexcept
     {
         return std::move(ref);
     }
@@ -184,7 +184,7 @@ struct result_traits<T&>
 
     using storage = detail::reference_storage<T>;
 
-    static reference wrap(T& ref) noexcept
+    static reference unwrap(T& ref) noexcept
     {
         return ref;
     }
@@ -198,7 +198,7 @@ struct result_traits<T&&>
 
     using storage = detail::value_storage<T>;
 
-    static reference wrap(T&& ref) noexcept
+    static reference unwrap(T&& ref) noexcept
     {
         return std::move(ref);
     }
@@ -214,7 +214,7 @@ struct reference_wrapper_traits
 
     using storage = reference_storage<type>;
 
-    static reference wrap(const std::reference_wrapper<T> ref) noexcept
+    static reference unwrap(const std::reference_wrapper<T> ref) noexcept
     {
         return ref.get();
     }
