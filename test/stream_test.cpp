@@ -18,5 +18,6 @@ TEST(TEST_CASE_NAME, _Test)
         .map([](int x) noexcept { return x + 2; })
         .flat_map([](int x) { return std::vector<int>{ 0, 1, 2, x }; })
         .filter([](int x) { return x > 0; })
-        .distinct();
+        .distinct()
+        .count();
 }

@@ -11,15 +11,13 @@ option(test "Build tests." OFF)
 file(GLOB HEADERS include/*.hpp)
 file(GLOB DETAIL_HEADERS include/detail/*.hpp)
 file(GLOB TRANSFORMATIONS_HEADERS include/transformations/*.hpp)
-file(GLOB TERMINATORS_HEADERS include/terminators/*.hpp)
 
 source_group("lib" FILES ${HEADERS})
 source_group("lib\\detail" FILES ${DETAIL_HEADERS})
 source_group("lib\\transformations" FILES ${TRANSFORMATIONS_HEADERS})
-#source_group("lib\\terminators" FILES ${TERMINATORS_HEADERS})
 
 add_library(${PROJECT} INTERFACE)
-target_sources(${PROJECT} INTERFACE ${HEADERS} ${DETAIL_HEADERS} ${TRANSFORMATIONS_HEADERS} ${TERMINATORS_HEADERS})
+target_sources(${PROJECT} INTERFACE ${HEADERS} ${DETAIL_HEADERS} ${TRANSFORMATIONS_HEADERS})
 target_include_directories(${PROJECT} INTERFACE include/)
 
 if (MSVC)

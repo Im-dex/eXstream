@@ -29,14 +29,14 @@ public:
 
     explicit distinct_iterator(const Iterator& iterator, const Allocator& alloc)
         : transform_iterator(iterator),
-          set(0, alloc),
+          set(alloc),
           elementIter()
     {
     }
 
     explicit distinct_iterator(Iterator&& iterator, const Allocator& alloc)
         : transform_iterator(std::move(iterator)),
-          set(0, alloc),
+          set(alloc),
           elementIter()
     {
     }
@@ -78,7 +78,7 @@ private:
 
         while (iterator.has_next())
         {
-            auto insertResult = set.insert(iterator.next());
+            auto insertResult = set.emplace(iterator.next());
             if (insertResult.second)
             {
                 elementIter = insertResult.first;
@@ -123,17 +123,17 @@ public:
     distinct_iterator(const distinct_iterator&) = delete;
     distinct_iterator& operator= (const distinct_iterator&) = delete;
 
-    bool has_next() noexcept(noexcept(std::declval<Iterator>().has_next()))
+    bool has_next() noexcept(noexcept(std::declval<Iterator&>().has_next()))
     {
         return iterator.has_next();
     }
 
-    reference next() noexcept(noexcept(std::declval<Iterator>().next()))
+    reference next() noexcept(noexcept(std::declval<Iterator&>().next()))
     {
         return iterator.next();
     }
 
-    void skip() noexcept(noexcept(std::declval<Iterator>().skip()))
+    void skip() noexcept(noexcept(std::declval<Iterator&>().skip()))
     {
         iterator.skip();
     }
@@ -149,10 +149,10 @@ constexpr bool is_nothrow_fetch() noexcept
     using reference = typename Iterator::reference;
     using storage = typename result_traits<reference>::storage;
 
-    return noexcept(std::declval<Iterator>().has_next())            &&
-           noexcept(std::declval<Iterator>().next())                &&
-           std::is_nothrow_assignable_v<option<storage>, reference> &&
-           is_nothrow_comparable_v<value_type>;
+    return noexcept(std::declval<Iterator&>().has_next()) &&
+           noexcept(std::declval<Iterator&>().next())     &&
+           is_nothrow_comparable_v<value_type>            &&
+           noexcept(std::declval<option<storage>&>().emplace(std::declval<reference>()));
 }
 
 }} // detail::distinct namespace
@@ -217,7 +217,7 @@ private:
         {
             if (iterator.has_next())
             {
-                cache = iterator.next();
+                cache.emplace(iterator.next());
                 valid_cache = true;
             }
             return;
@@ -228,7 +228,7 @@ private:
             auto&& value = iterator.next();
             if (cache.get() != std::as_const(get_lvalue_reference(value)))
             {
-                cache = std::forward<decltype(value)>(value);
+                cache.emplace(std::forward<decltype(value)>(value));
                 valid_cache = true;
                 break;
             }

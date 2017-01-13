@@ -11,11 +11,14 @@ namespace filter {
 template <typename Iterator, typename Function>
 constexpr bool is_nothrow_fetch() noexcept
 {
+    using reference = typename Iterator::reference;
+    using storage = typename result_traits<reference>::storage;
     using function_arg = std::add_lvalue_reference_t<std::add_const_t<typename Iterator::value_type>>;
 
-    return noexcept(std::declval<Iterator>().has_next())  &&
-           noexcept(std::declval<Iterator>().next()) &&
-           noexcept(std::declval<const Function&>()(std::declval<function_arg>()));
+    return noexcept(std::declval<Iterator&>().has_next())                          &&
+           noexcept(std::declval<Iterator&>().next())                              &&
+           noexcept(std::declval<const Function&>()(std::declval<function_arg>())) &&
+           noexcept(std::declval<option<storage>&>().emplace(std::declval<reference>()));
 }
 
 }} // detail::filter namespace
@@ -87,7 +90,7 @@ private:
 
             if (function(std::as_const(get_lvalue_reference(value))))
             {
-                cache = std::forward<decltype(value)>(value);
+                cache.emplace(std::forward<decltype(value)>(value));
                 break;
             }
         }

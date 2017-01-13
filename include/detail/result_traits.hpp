@@ -21,9 +21,9 @@ public:
     {
     }
 
-    value_storage(const value_storage&) = delete;
-    value_storage(value_storage&&) = delete;
+    value_storage(value_storage&&) = default;
 
+    value_storage(const value_storage&) = delete;
     value_storage& operator= (const value_storage&) = delete;
     value_storage& operator= (value_storage&&) = delete;
 
@@ -102,9 +102,9 @@ public:
     {
     }
 
-    reference_storage(const reference_storage&) = delete;
-    reference_storage(reference_storage&&) = delete;
+    reference_storage(reference_storage&&) = default;
 
+    reference_storage(const reference_storage&) = delete;
     reference_storage& operator= (const reference_storage&) = delete;
     reference_storage& operator= (reference_storage&&) = delete;
 
@@ -255,7 +255,7 @@ struct hash<exstream::detail::value_storage<T>>
 {
     size_t operator() (const exstream::detail::value_storage<T>& value) const noexcept
     {
-        return std::hash<T>()(value.get_ref());
+        return std::hash<remove_const_t<T>>()(value.get_ref());
     }
 };
 
@@ -264,7 +264,7 @@ struct hash<exstream::detail::reference_storage<T>>
 {
     size_t operator() (const exstream::detail::reference_storage<T> value) const noexcept
     {
-        return std::hash<T>()(value.get_ref());
+        return std::hash<remove_const_t<T>>()(value.get_ref());
     }
 };
 

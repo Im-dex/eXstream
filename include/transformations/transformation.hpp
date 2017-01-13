@@ -1,6 +1,7 @@
 #pragma once
 
 #include "with_transformations.hpp"
+#include "terminator.hpp"
 
 namespace exstream {
 
@@ -10,7 +11,8 @@ template <typename T,
           typename Allocator,
           typename Meta,
           typename Self>
-class base_transformation : public with_transformations<T, Self>
+class base_transformation : public with_transformations<T, Self>,
+                            public terminator<T, Self>
 {
 public:
 
@@ -61,7 +63,7 @@ public:
     {
     }
 
-    transformation(transformation&&) = default; // TODO: hide from user
+    transformation(transformation&&) = default;
 
     transformation(const transformation&) = delete;
     transformation& operator= (const transformation&) = delete;

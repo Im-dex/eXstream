@@ -24,12 +24,12 @@ public:
     using value_type = typename std::iterator_traits<stream_iterator>::value_type;
     using reference = typename std::iterator_traits<stream_iterator>::reference;
 
-    explicit stream_hold_iterator(Stream&& stream) noexcept(std::is_nothrow_move_constructible_v<Stream>                          &&
-                                                            noexcept(std::make_move_iterator(std::begin(std::declval<Stream>()))) &&
-                                                            noexcept(std::make_move_iterator(std::end(std::declval<Stream>()))))
-        : stream(std::move(stream)),
-          iter(std::make_move_iterator(std::begin(this->stream))),
-          end(std::make_move_iterator(std::end(this->stream)))
+    explicit stream_hold_iterator(Stream&& streamArg) noexcept(std::is_nothrow_move_constructible_v<Stream>                          &&
+                                                               noexcept(std::make_move_iterator(std::begin(std::declval<Stream>()))) &&
+                                                               noexcept(std::make_move_iterator(std::end(std::declval<Stream>()))))
+        : stream(std::move(streamArg)),
+          iter(std::make_move_iterator(std::begin(stream))),
+          end(std::make_move_iterator(std::end(stream)))
     {
     }
 
@@ -100,12 +100,12 @@ public:
         return iter != end;
     }
 
-    reference next() noexcept(noexcept(*(std::declval<stream_iterator>()++)))
+    reference next() noexcept(noexcept(*(std::declval<stream_iterator&>()++)))
     {
         return *(iter++);
     }
 
-    void skip() noexcept(noexcept(++std::declval<stream_iterator>()))
+    void skip() noexcept(noexcept(++std::declval<stream_iterator&>()))
     {
         ++iter;
     }
@@ -127,10 +127,11 @@ template <typename Iterator,
           typename StreamHoldIterator>
 constexpr bool is_nothrow_fetch() noexcept
 {
-    return std::is_nothrow_destructible_v<StreamHoldIterator> &&
-           noexcept(
-               std::declval<StreamHoldIterator&>() = std::declval<const Function&>()(std::declval<Iterator>().next())
-           );
+    return noexcept(
+        std::declval<option<StreamHoldIterator>&>().emplace(
+            std::declval<const Function&>()(std::declval<Iterator&>().next())
+        )
+    );
 }
 
 }} // detail::flat_map namespace
@@ -197,7 +198,7 @@ private:
 
     void fetch() noexcept(detail::flat_map::is_nothrow_fetch<Iterator, Function, stream_hold_iterator>())
     {
-        streamIterator = function(iterator.next());
+        streamIterator.emplace(function(iterator.next()));
     }
 
     option<stream_hold_iterator> streamIterator;

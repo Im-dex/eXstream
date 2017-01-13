@@ -1,6 +1,6 @@
 #pragma once
 
-#include "transformations/with_transformations.hpp"
+//#include "transformations/with_transformations.hpp"
 #include "transformations/transformation.hpp"
 
 namespace exstream {
@@ -9,7 +9,8 @@ template <typename T,
           typename Iterator,
           typename Allocator,
           typename Meta>
-class stream final : public with_transformations<T, stream<T, Iterator, Allocator, Meta>>
+class stream final : public with_transformations<T, stream<T, Iterator, Allocator, Meta>>,
+                     public terminator<T, stream<T, Iterator, Allocator, Meta>>
 {
 public:
 
@@ -24,7 +25,7 @@ public:
     {
     }
 
-    stream(stream&&) = default; // TODO: hide from user
+    stream(stream&&) = default;
 
     stream(const stream&) = delete;
     stream& operator= (const stream&) = delete;

@@ -212,7 +212,7 @@ public:
             {
                 if (that.non_empty())
                 {
-                    construct(std::move(that).value());
+                    construct(std::move(that.value()));
                     that.destroy();
                     that.emptyFlag = true;
                 }
@@ -988,12 +988,12 @@ public:
     {
     }
 
-    option(const none_t&) noexcept
+    explicit option(const none_t&) noexcept
         : option()
     {
     }
 
-    option(value_type reference) noexcept
+    explicit option(value_type reference) noexcept
         : pointer(&reference)
     {
     }

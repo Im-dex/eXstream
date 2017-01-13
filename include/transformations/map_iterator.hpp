@@ -37,7 +37,7 @@ public:
     map_iterator& operator= (const map_iterator&) = delete;
     map_iterator& operator= (map_iterator&&) = delete;
 
-    bool has_next() noexcept(noexcept(std::declval<const Iterator&>().has_next()))
+    bool has_next() noexcept(noexcept(std::declval<Iterator&>().has_next()))
     {
         return iterator.has_next();
     }
@@ -48,7 +48,7 @@ public:
         return traits::unwrap(function(iterator.next()));
     }
 
-    void skip() noexcept(noexcept(std::declval<const Iterator&>().skip()))
+    void skip() noexcept(noexcept(std::declval<Iterator&>().skip()))
     {
         iterator.skip();
     }
