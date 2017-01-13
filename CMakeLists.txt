@@ -1,44 +1,36 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.1)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 
 set(PROJECT eXstream)
-set(CMAKE_SHARED_LIBRARY_PREFIX "")
-
 project(${PROJECT})
 
 option(test "Build tests." OFF)
 
-include_directories(include)
-include_directories(src)
-
-add_definitions(-DSTREAM_BUILD_DLL)
-
 file(GLOB HEADERS include/*.hpp)
 file(GLOB DETAIL_HEADERS include/detail/*.hpp)
 file(GLOB TRANSFORMATIONS_HEADERS include/transformations/*.hpp)
-source_group("include" FILES ${HEADERS})
-source_group("include\\detail" FILES ${DETAIL_HEADERS})
-source_group("include\\transformations" FILES ${TRANSFORMATIONS_HEADERS})
+file(GLOB TERMINATORS_HEADERS include/terminators/*.hpp)
 
-file(GLOB SOURCES src/*.cpp src/*.hpp)
-source_group("src" FILES ${SOURCES})
+source_group("lib" FILES ${HEADERS})
+source_group("lib\\detail" FILES ${DETAIL_HEADERS})
+source_group("lib\\transformations" FILES ${TRANSFORMATIONS_HEADERS})
+#source_group("lib\\terminators" FILES ${TERMINATORS_HEADERS})
 
-set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+add_library(${PROJECT} INTERFACE)
+target_sources(${PROJECT} INTERFACE ${HEADERS} ${DETAIL_HEADERS} ${TRANSFORMATIONS_HEADERS} ${TERMINATORS_HEADERS})
+target_include_directories(${PROJECT} INTERFACE include/)
 
 if (MSVC)
-    add_definitions(/Wall /WX /wd4710 /wd4820 /wd4514 /wd4571 /wd4503 /wd4505)
+    target_compile_options(${PROJECT} INTERFACE /Wall /WX /wd4710 /wd4820 /wd4514 /wd4571 /wd4503 /wd4505)
 endif()
-
-add_library(${PROJECT} SHARED ${SOURCES} ${HEADERS} ${DETAIL_HEADERS} ${TRANSFORMATIONS_HEADERS})
 
 if (test)
     include(ExternalProject)
 
     set(GTEST_PROJECT gtest)
-    set(TEST_PROJECT test_stream)
+    set(TEST_PROJECT eXstream-test)
 
     set(gtest_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/gtest_install)
     set(gtest_INCLUDE ${gtest_INSTALL_DIR}/include)
@@ -59,8 +51,10 @@ if (test)
     # Unit Tests #
     ##############
     file(GLOB TEST_SOURCES test/*.cpp test/*.hpp)
+    source_group("tests" FILES ${TEST_SOURCES})
+
     add_executable(${TEST_PROJECT} ${TEST_SOURCES})
     target_link_libraries(${TEST_PROJECT} gtest.lib gmock.lib gmock_main.lib)
-
-    #target_link_libraries(${TEST_PROJECT} stream_lib)
+    add_dependencies(${TEST_PROJECT} ${GTEST_PROJECT})
+    target_link_libraries(${TEST_PROJECT} ${PROJECT})
 endif()
