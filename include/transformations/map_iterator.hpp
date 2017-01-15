@@ -59,6 +59,11 @@ public:
         iterator.skip();
     }
 
+    size_t elements_count() const noexcept(noexcept(std::declval<Iterator&>().elements_count()))
+    {
+        return iterator.elements_count();
+    }
+
 private:
 
     const Function& function;

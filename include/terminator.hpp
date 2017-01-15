@@ -20,6 +20,12 @@ constexpr bool is_nothrow_next() noexcept
            noexcept(std::declval<const Self&>().get_iterator().next());
 }
 
+template <typename Self>
+constexpr bool is_nothrow_elements_count() noexcept
+{
+    return noexcept(std::declval<const Self&>().get_iterator().size());
+}
+
 }} // detail::terminate namespace
 
 template <typename T, typename Self>
@@ -33,12 +39,16 @@ public:
     terminator(const terminator&) = delete;
     terminator& operator= (const terminator&) = delete;
 
-    // TODO: optimization: add size() -> option<size_t> method to the iterator
-    size_t count() const noexcept(detail::terminate::is_nothrow_skip<Self>())
+    size_t count() const noexcept(detail::terminate::is_nothrow_skip<Self>() &&
+                                  detail::terminate::is_nothrow_elements_count<Self>())
     {
-        auto counter = size_t(0);
         auto iter = self().get_iterator();
+        const auto elementsCount = iter.elements_count();
 
+        if (elementsCount != npos)
+            return elementsCount;
+
+        auto counter = size_t(0);
         while (iter.has_next())
         {
             counter++;

@@ -28,4 +28,6 @@ struct type_t final
 /*template <typename T>
 constexpr type_t<T> type = type_t<T>();*/
 
+constexpr size_t npos = size_t(-1);
+
 } // exstream namespace

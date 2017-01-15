@@ -59,6 +59,11 @@ public:
         ++iter;
     }
 
+    size_t elements_count() const noexcept
+    {
+        return npos;
+    }
+
 private:
 
     Stream stream;

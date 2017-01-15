@@ -34,6 +34,7 @@ public:
           elementIter(std::end(set)),
           end(elementIter)
     {
+        init_set();
     }
 
     explicit distinct_iterator(Iterator&& iterator, const Allocator& alloc)
@@ -42,6 +43,7 @@ public:
           elementIter(std::end(set)),
           end(elementIter)
     {
+        init_set();
     }
 
     distinct_iterator(distinct_iterator&&) = default;
@@ -68,14 +70,23 @@ public:
         fetch();
     }
 
+    size_t elements_count() const noexcept
+    {
+        return npos;
+    }
+
 private:
 
     using storage = typename result_traits<reference>::storage;
     using set_type = std::unordered_set<storage, std::hash<storage>, std::equal_to<storage>, Allocator>;
     using set_iterator = typename set_type::iterator;
 
-    // TODO: forward size if possible and then reserve
-    // TODO: set.reserve(???);
+    void init_set()
+    {
+        const auto count = iterator.elements_count();
+        if (count != npos)
+            set.reserve(count);
+    }
 
     void fetch()
     {

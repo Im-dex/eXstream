@@ -54,6 +54,21 @@ public:
         ++beginIterator;
     }
 
+    size_t elements_count() const noexcept(!is_random_access_iterator_v<BeginIterator> ||
+                                           !is_random_access_iterator_v<EndIterator>)
+    {
+        return constexpr_if<is_random_access_iterator_v<BeginIterator> &&
+                            is_random_access_iterator_v<EndIterator>>()
+            .then([this](auto)
+            {
+                return std::distance(beginIterator, endIterator);
+            })
+            .else_([](auto) noexcept
+            {
+                return npos;
+            })(nothing);
+    }
+
 private:
 
     BeginIterator beginIterator;

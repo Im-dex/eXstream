@@ -78,6 +78,11 @@ public:
         fetch();
     }
 
+    size_t elements_count() const noexcept
+    {
+        return npos;
+    }
+
 private:
 
     using storage = typename result_traits<reference>::storage;
