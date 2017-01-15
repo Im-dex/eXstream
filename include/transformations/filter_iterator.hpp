@@ -11,14 +11,14 @@ namespace filter {
 template <typename Iterator, typename Function>
 constexpr bool is_nothrow_fetch() noexcept
 {
-    using reference = typename Iterator::reference;
-    using storage = typename result_traits<reference>::storage;
+    using result_type = typename Iterator::result_type;
+    using storage = typename result_traits<result_type>::storage;
     using function_arg = std::add_lvalue_reference_t<std::add_const_t<typename Iterator::value_type>>;
 
     return noexcept(std::declval<Iterator&>().has_next())                          &&
            noexcept(std::declval<Iterator&>().next())                              &&
            noexcept(std::declval<const Function&>()(std::declval<function_arg>())) &&
-           noexcept(std::declval<option<storage>&>().emplace(std::declval<reference>()));
+           noexcept(std::declval<option<storage>&>().emplace(std::declval<result_type>()));
 }
 
 }} // detail::filter namespace
@@ -28,10 +28,11 @@ template <typename Iterator,
           typename Meta>
 class filter_iterator final : public transform_iterator<Iterator>
 {
+    using traits = result_traits<typename Iterator::result_type>;
 public:
 
-    using value_type = typename Iterator::value_type;
-    using reference = typename Iterator::reference;
+    using value_type = typename traits::value_type;
+    using result_type = typename traits::result_type;
     using meta = Meta;
 
     template <typename Allocator>
@@ -62,7 +63,7 @@ public:
         return iterator.has_next() || cache.non_empty();
     }
 
-    reference next() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
+    result_type next() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
     {
         if (cache.empty()) fetch();
         EXSTREAM_SCOPE_SUCCESS noexcept(std::is_nothrow_destructible_v<storage>)
@@ -85,7 +86,7 @@ public:
 
 private:
 
-    using storage = typename result_traits<reference>::storage;
+    using storage = typename traits::storage;
 
     void fetch() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
     {

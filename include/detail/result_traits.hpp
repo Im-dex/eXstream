@@ -39,15 +39,14 @@ public:
         return value;
     }
 
-    T&& release() noexcept
+    T release() noexcept
     {
         return std::move(value);
     }
 
-    T&& copy() const noexcept(std::is_nothrow_copy_constructible_v<T>)
+    T copy() const noexcept(std::is_nothrow_copy_constructible_v<T>)
     {
-        auto copy = value;
-        return std::move(copy);
+        return copy(std::is_copy_constructible<T>());
     }
 
     bool operator== (const value_storage& that) const noexcept(is_nothrow_comparable_v<const T>)
@@ -71,6 +70,17 @@ public:
     }
 
 private:
+
+    T copy(std::true_type /* is copy constructible */) const noexcept(std::is_nothrow_copy_constructible_v<T>)
+    {
+        return value;
+    }
+
+    [[noreturn]]
+    static T copy(std::false_type /* is copy constructible */) noexcept
+    {
+        std:terminate(); // dummy terminate
+    }
 
     T value;
 };
@@ -165,12 +175,12 @@ bool operator!= (const T& value, const reference_storage<T> storage) noexcept(is
 template <typename T>
 struct result_traits
 {
-    using type = T;
-    using reference = T&&;
+    using value_type = T;
+    using result_type = T;
 
     using storage = detail::value_storage<T>;
 
-    static reference unwrap(T&& ref) noexcept
+    static result_type unwrap(T&& ref) noexcept
     {
         return std::move(ref);
     }
@@ -179,12 +189,12 @@ struct result_traits
 template <typename T>
 struct result_traits<T&>
 {
-    using type = std::remove_const_t<T>;
-    using reference = T&;
+    using value_type = std::remove_const_t<T>;
+    using result_type = T&;
 
     using storage = detail::reference_storage<T>;
 
-    static reference unwrap(T& ref) noexcept
+    static result_type unwrap(T& ref) noexcept
     {
         return ref;
     }
@@ -193,12 +203,14 @@ struct result_traits<T&>
 template <typename T>
 struct result_traits<T&&>
 {
-    using type = std::remove_const_t<T>;
-    using reference = T&&;
+    static_assert(!std::is_const_v<T>, "Rvalue reference to const isn't allowed");
+
+    using value_type = T;
+    using result_type = T;
 
     using storage = detail::value_storage<T>;
 
-    static reference unwrap(T&& ref) noexcept
+    static result_type unwrap(T&& ref) noexcept
     {
         return std::move(ref);
     }
@@ -209,12 +221,12 @@ namespace detail {
 template <typename T>
 struct reference_wrapper_traits
 {
-    using type = std::remove_const_t<T>;
-    using reference = T&;
+    using value_type = std::remove_const_t<T>;
+    using result_type = T&;
 
-    using storage = reference_storage<type>;
+    using storage = reference_storage<value_type>;
 
-    static reference unwrap(const std::reference_wrapper<T> ref) noexcept
+    static result_type unwrap(const std::reference_wrapper<T> ref) noexcept
     {
         return ref.get();
     }

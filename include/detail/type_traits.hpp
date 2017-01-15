@@ -171,4 +171,23 @@ struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
 template <typename T>
 constexpr bool is_reference_wrapper_v = is_reference_wrapper<T>::value;
 
+#define EXSTREAM_DEFINE_HAS_METHOD(methodName)\
+    template <typename T, typename... Args>\
+    class has_ ## methodName ## _method_detector final\
+    {\
+        template <typename U, typename... Us>\
+        static auto check(U&& object, Us&&... args) -> decltype(object.methodName(std::forward<Us>(args)...), std::true_type());\
+        \
+        static std::false_type check(...);\
+    public:\
+        \
+        using type = decltype(check(std::declval<T>(), std::declval<Args>()...));\
+    };\
+    \
+    template <typename T, typename... Args>\
+    using has_ ## methodName ## _method = typename has_ ## methodName  ## _method_detector<T, Args...>::type;\
+    \
+    template <typename T, typename... Args>\
+    constexpr bool has_ ## methodName ## _method_v = has_ ## methodName ## _method<T, Args...>::value;
+
 } // exstream namespace

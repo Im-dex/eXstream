@@ -14,11 +14,11 @@ template <typename Iterator,
           typename Meta>
 class map_iterator final : public transform_iterator<Iterator>
 {
-    using traits = result_traits<std::result_of_t<const Function&(typename Iterator::reference)>>;
+    using traits = result_traits<std::result_of_t<const Function&(typename Iterator::result_type)>>;
 public:
 
-    using value_type = typename traits::type;
-    using reference = typename traits::reference;
+    using value_type = typename traits::value_type;
+    using result_type = typename traits::result_type;
     using meta = Meta;
 
     template <typename Allocator>
@@ -47,7 +47,7 @@ public:
     }
 
     // TODO: replace reference to primitive type with a value type
-    reference next() noexcept(noexcept(std::declval<const Function&>()(std::declval<Iterator&>().next())))
+    result_type next() noexcept(noexcept(std::declval<const Function&>()(std::declval<Iterator&>().next())))
     {
         assert(has_next() && "Iterator is out of range");
         return traits::unwrap(function(iterator.next()));

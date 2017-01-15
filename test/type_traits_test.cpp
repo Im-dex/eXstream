@@ -67,7 +67,7 @@ TEST(TEST_CASE_NAME, sum_Test)
 
 int func(const float, int&) { return 0; }
 
-struct StaticFunctionHolder
+struct static_function_holder
 {
     static void staticFunc(std::string) {}
 };
@@ -81,28 +81,28 @@ const std::function<void(std::string, float)> stdFunc = [&](auto, auto) -> void 
 TEST(TEST_CASE_NAME, is_callable_Test)
 {
     EXPECT_TRUE((is_callable_v<decltype(func), int, const float, int&>));
-    EXPECT_TRUE((is_callable_v<decltype(StaticFunctionHolder::staticFunc), void, std::string>));
+    EXPECT_TRUE((is_callable_v<decltype(static_function_holder::staticFunc), void, std::string>));
     EXPECT_TRUE((is_callable_v<decltype(stdFunc), void, std::string, float>));
     EXPECT_TRUE((is_callable_v<decltype(lambda), int&, int, double*>));
     EXPECT_TRUE((is_callable_v<decltype(genericLambda), int&, int, float&>));
 
     // incorrect return type
     EXPECT_FALSE((is_callable_v<decltype(func), float, const float, int&>));
-    EXPECT_FALSE((is_callable_v<decltype(StaticFunctionHolder::staticFunc), int, std::string>));
+    EXPECT_FALSE((is_callable_v<decltype(static_function_holder::staticFunc), int, std::string>));
     EXPECT_FALSE((is_callable_v<decltype(stdFunc), int, std::string, float>));
     EXPECT_FALSE((is_callable_v<decltype(lambda), int, int, double*>));
     EXPECT_FALSE((is_callable_v<decltype(genericLambda), float, int, float&>));
 
     // incorrect arguments
     EXPECT_FALSE((is_callable_v<decltype(func), int, std::string, int&>));
-    EXPECT_FALSE((is_callable_v<decltype(StaticFunctionHolder::staticFunc), void, int>));
+    EXPECT_FALSE((is_callable_v<decltype(static_function_holder::staticFunc), void, int>));
     EXPECT_FALSE((is_callable_v<decltype(stdFunc), void, float, std::string>));
     EXPECT_FALSE((is_callable_v<decltype(lambda), int&, int*, double*>));
     // NOTE: generic lambda accepts all types of arguments
 
     // incorrect arguments count
     EXPECT_FALSE((is_callable_v<decltype(func), int, const float>));
-    EXPECT_FALSE((is_callable_v<decltype(StaticFunctionHolder::staticFunc), void>));
+    EXPECT_FALSE((is_callable_v<decltype(static_function_holder::staticFunc), void>));
     EXPECT_FALSE((is_callable_v<decltype(stdFunc), void, std::string, float, int>));
     EXPECT_FALSE((is_callable_v<decltype(lambda), int&, double*>));
     EXPECT_FALSE((is_callable_v<decltype(genericLambda), int&, int, float&, const double>));
@@ -111,21 +111,21 @@ TEST(TEST_CASE_NAME, is_callable_Test)
 TEST(TEST_CASE_NAME, is_invokable_Test)
 {
     EXPECT_TRUE((is_invokable_v<decltype(func), const float, int&>));
-    EXPECT_TRUE((is_invokable_v<decltype(StaticFunctionHolder::staticFunc), std::string>));
+    EXPECT_TRUE((is_invokable_v<decltype(static_function_holder::staticFunc), std::string>));
     EXPECT_TRUE((is_invokable_v<decltype(stdFunc), std::string, float>));
     EXPECT_TRUE((is_invokable_v<decltype(lambda), int, double*>));
     EXPECT_TRUE((is_invokable_v<decltype(genericLambda), int, float&>));
 
     // incorrect arguments
     EXPECT_FALSE((is_invokable_v<decltype(func), std::string, int&>));
-    EXPECT_FALSE((is_invokable_v<decltype(StaticFunctionHolder::staticFunc), int>));
+    EXPECT_FALSE((is_invokable_v<decltype(static_function_holder::staticFunc), int>));
     EXPECT_FALSE((is_invokable_v<decltype(stdFunc), float, std::string>));
     EXPECT_FALSE((is_invokable_v<decltype(lambda), int*, double*>));
     // NOTE: generic lambda accepts any type of argument
 
     // incorrect arguments count
     EXPECT_FALSE((is_invokable_v<decltype(func), const float>));
-    EXPECT_FALSE((is_invokable_v<decltype(StaticFunctionHolder::staticFunc)>));
+    EXPECT_FALSE((is_invokable_v<decltype(static_function_holder::staticFunc)>));
     EXPECT_FALSE((is_invokable_v<decltype(stdFunc), std::string, float, int>));
     EXPECT_FALSE((is_invokable_v<decltype(lambda), double*>));
     EXPECT_FALSE((is_invokable_v<decltype(genericLambda), int, float&, const double>));
@@ -135,28 +135,28 @@ EXSTREAM_DEFINE_HAS_TYPE_MEMBER(value_type)
 
 TEST(TEST_CASE_NAME, has_type_Test)
 {
-    struct NoValueType
+    struct no_value_type
     {
         using type = int;
     };
 
-    struct HasValueType
+    struct has_value_type
     {
         using value_type = int;
     };
 
-    struct HasReferenceValueType
+    struct has_reference_value_type
     {
         using value_type = int&;
     };
 
     EXPECT_TRUE(has_value_type_member<std::string>::value);
     EXPECT_TRUE(has_value_type_member_v<std::vector<int>::iterator>);
-    EXPECT_TRUE(has_value_type_member<HasValueType>::value);
-    EXPECT_TRUE(has_value_type_member_v<HasReferenceValueType>);
+    EXPECT_TRUE(has_value_type_member<has_value_type>::value);
+    EXPECT_TRUE(has_value_type_member_v<has_reference_value_type>);
 
     EXPECT_FALSE(has_value_type_member<int>::value);
-    EXPECT_FALSE(has_value_type_member_v<NoValueType>);
+    EXPECT_FALSE(has_value_type_member_v<no_value_type>);
 }
 
 TEST(TEST_CASE_NAME, is_reference_wrapper_Test)
@@ -167,4 +167,29 @@ TEST(TEST_CASE_NAME, is_reference_wrapper_Test)
 
     EXPECT_FALSE(is_reference_wrapper_v<int&>);
     EXPECT_FALSE(is_reference_wrapper_v<const std::string&>);
+}
+
+EXSTREAM_DEFINE_HAS_METHOD(push_back)
+
+TEST(TEST_CASE_NAME, has_method_Test)
+{
+    struct with_push_back
+    {
+        void push_back() {}
+        void push_back(int) {}
+    };
+
+    struct without_push_back
+    {
+        void push(int) {}
+    };
+
+    EXPECT_TRUE((has_push_back_method_v<std::vector<int>, int>));
+    EXPECT_TRUE((has_push_back_method_v<with_push_back>));
+    EXPECT_TRUE((has_push_back_method_v<with_push_back, int>));
+
+    EXPECT_FALSE((has_push_back_method_v<std::vector<int>, std::string>));
+    EXPECT_FALSE((has_push_back_method_v<without_push_back>));
+    EXPECT_FALSE((has_push_back_method_v<without_push_back, int>));
+    EXPECT_FALSE((has_push_back_method_v<std::map<int, float>>));
 }

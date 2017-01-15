@@ -57,7 +57,7 @@ public:
             {
                 using traits = result_traits<std::result_of_t<const Function&(T)>>;
 
-                return constexpr_if<is_iterable_v<typename traits::type>>()
+                return constexpr_if<is_iterable_v<typename traits::value_type>>()
                     .then([&](auto) noexcept
                     {
                         using allocator = typename Self::allocator;

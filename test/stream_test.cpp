@@ -20,7 +20,8 @@ TEST(TEST_CASE_NAME, _Test)
         .flat_map([](int x) { return std::vector<int>{ 0, 1, 2, x }; })
         .filter([](int x) { return x > 0; })
         .distinct()
-        .count();
+        //.count();
+        .to<std::vector<int>>();
 
-    EXPECT_THAT(e, Eq(5));
+    EXPECT_THAT(e, UnorderedElementsAre(1, 2, 4, 5, 6));
 }

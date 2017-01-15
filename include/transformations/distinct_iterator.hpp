@@ -21,12 +21,15 @@ template <typename Iterator,
           typename Allocator>
 class distinct_iterator final : public transform_iterator<Iterator>
 {
+    using traits = result_traits<typename Iterator::result_type>;
 public:
 
-    using value_type = typename Iterator::value_type;
-    using reference = typename Iterator::reference;
+    using value_type = typename traits::value_type;
+    using result_type = typename traits::result_type;
     // TODO: maybe use simple set to preserve order???
     using meta = meta_info<false, true, Order::Ascending>; // TODO: custom comparator can change this
+
+    static_assert(std::is_copy_constructible_v<value_type>, "Distinct requires type to be a copy constructible in that case.");
 
     explicit distinct_iterator(const Iterator& iterator, const Allocator& alloc)
         : transform_iterator(iterator),
@@ -57,10 +60,16 @@ public:
         return iterator.has_next() || has_element();
     }
 
-    reference next()
+    result_type next()
     {
         assert(has_next() && "Iterator is out of range");
         if (!has_element()) fetch();
+
+        EXSTREAM_SCOPE_SUCCESS noexcept(noexcept(++std::declval<set_iterator>()))
+        {
+            ++elementIter;
+        };
+
         return elementIter->copy();
     }
 
@@ -77,7 +86,7 @@ public:
 
 private:
 
-    using storage = typename result_traits<reference>::storage;
+    using storage = typename traits::storage;
     using set_type = std::unordered_set<storage, std::hash<storage>, std::equal_to<storage>, Allocator>;
     using set_iterator = typename set_type::iterator;
 
@@ -122,7 +131,7 @@ class distinct_iterator<Iterator, meta_info<IsOrdered, true /*IsDistinct*/, AnOr
 public:
 
     using value_type = typename Iterator::value_type;
-    using reference = typename Iterator::reference;
+    using result_type = typename Iterator::result_type;
     using meta = meta_info<IsOrdered, true, AnOrder>;
 
     explicit distinct_iterator(const Iterator& iterator, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
@@ -145,7 +154,7 @@ public:
         return iterator.has_next();
     }
 
-    reference next() noexcept(noexcept(std::declval<Iterator&>().next()))
+    result_type next() noexcept(noexcept(std::declval<Iterator&>().next()))
     {
         assert(has_next() && "Iterator is out of range");
         return iterator.next();
@@ -165,13 +174,13 @@ template <typename Iterator>
 constexpr bool is_nothrow_fetch() noexcept
 {
     using value_type = typename Iterator::value_type;
-    using reference = typename Iterator::reference;
-    using storage = typename result_traits<reference>::storage;
+    using result_type = typename Iterator::result_type;
+    using storage = typename result_traits<result_type>::storage;
 
     return noexcept(std::declval<Iterator&>().has_next()) &&
            noexcept(std::declval<Iterator&>().next())     &&
            is_nothrow_comparable_v<value_type>            &&
-           noexcept(std::declval<option<storage>&>().emplace(std::declval<reference>()));
+           noexcept(std::declval<option<storage>&>().emplace(std::declval<result_type>()));
 }
 
 }} // detail::distinct namespace
@@ -182,10 +191,11 @@ template <typename Iterator,
           Order AnOrder>
 class distinct_iterator<Iterator, meta_info<true /*IsOrdered*/, false /*IsDistinct*/, AnOrder>, Allocator> : public transform_iterator<Iterator>
 {
+    using traits = result_traits<typename Iterator::result_type>;
 public:
 
-    using value_type = typename Iterator::value_type;
-    using reference = typename Iterator::reference;
+    using value_type = typename traits::value_type;
+    using result_type = typename traits::result_type;
     using meta = meta_info<true, true, AnOrder>;
 
     explicit distinct_iterator(const Iterator& iterator, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
@@ -213,7 +223,7 @@ public:
         return iterator.has_next() || cache_has_value();
     }
 
-    reference next() noexcept(detail::distinct::is_nothrow_fetch<Iterator>())
+    result_type next() noexcept(detail::distinct::is_nothrow_fetch<Iterator>())
     {
         assert(has_next() && "Iterator is out of range");
 
@@ -232,7 +242,7 @@ public:
 
 private:
 
-    using storage = typename result_traits<reference>::storage;
+    using storage = typename traits::storage;
 
     void fetch() noexcept(detail::distinct::is_nothrow_fetch<Iterator>())
     {

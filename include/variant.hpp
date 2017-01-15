@@ -172,29 +172,25 @@ struct variant_helper<> final
         return size_t(0);
     }
 
-    EXSTREAM_MSVC_SUPPRESS_WARNINGS_PUSH(4297)
-
-    // NOTE: invoke* functions throws an exception and marked as noexcept due to that functions has never called
+    // NOTE: invoke* functions never executed and used to stop recursion only
 
     template <typename Result, typename Function>
-    static Result invoke(const size_t, void*, Function&&) noexcept
+    [[noreturn]] static Result invoke(const size_t, void*, Function&&) noexcept
     {
-        throw bad_variant_access();
+        std::terminate(); // dummy terminate
     }
 
     template <typename Result, typename Function>
-    static Result invoke(const size_t, const void*, Function&&) noexcept
+    [[noreturn]] static Result invoke(const size_t, const void*, Function&&) noexcept
     {
-        throw bad_variant_access();
+        std::terminate(); // dummy terminate
     }
 
     template <typename Result, typename Function>
-    static Result invoke_on_rvalue(const size_t, void*, Function&&) noexcept
+    [[noreturn]] static Result invoke_on_rvalue(const size_t, void*, Function&&) noexcept
     {
-        throw bad_variant_access();
+        std::terminate(); // dummy terminate
     }
-
-    EXSTREAM_MSVC_WARNINGS_POP
 };
 
 template <typename Function, typename T>

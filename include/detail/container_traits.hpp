@@ -45,13 +45,13 @@ struct container_traits final
 };
 
 template <typename Key, typename T, typename Compare, typename Alloc>
-struct container_traits<std::map<Key, T, Compare, Alloc>> : public detail::container::ordered_container_traits<Compare>
+struct container_traits<std::map<Key, T, Compare, Alloc>> : detail::container::ordered_container_traits<Compare>
 {
     static constexpr bool is_distinct = true;
 };
 
 template <typename Key, typename T, typename Compare, typename Alloc>
-struct container_traits<std::multimap<Key, T, Compare, Alloc>> : public detail::container::ordered_container_traits<Compare>
+struct container_traits<std::multimap<Key, T, Compare, Alloc>> : detail::container::ordered_container_traits<Compare>
 {
     static constexpr bool is_distinct = false;
 };
@@ -64,13 +64,13 @@ struct container_traits<std::unordered_map<Key, T, Hash, KeyCompare, Alloc>>
 };
 
 template <typename T, typename Compare, typename Alloc>
-struct container_traits<std::set<T, Compare, Alloc>> : public detail::container::ordered_container_traits<Compare>
+struct container_traits<std::set<T, Compare, Alloc>> : detail::container::ordered_container_traits<Compare>
 {
     static constexpr bool is_distinct = true;
 };
 
 template <typename T, typename Compare, typename Alloc>
-struct container_traits<std::multiset<T, Compare, Alloc>> : public detail::container::ordered_container_traits<Compare>
+struct container_traits<std::multiset<T, Compare, Alloc>> : detail::container::ordered_container_traits<Compare>
 {
     static constexpr bool is_distinct = false;
 };

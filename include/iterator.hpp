@@ -15,7 +15,7 @@ class iterator final
 public:
 
     using value_type = typename std::iterator_traits<BeginIterator>::value_type;
-    using reference = typename std::iterator_traits<BeginIterator>::reference;
+    using result_type = typename std::iterator_traits<BeginIterator>::reference;
 
     iterator(const BeginIterator& beginIterator, const EndIterator& endIterator) noexcept(std::is_nothrow_copy_constructible_v<BeginIterator> &&
                                                                                           std::is_nothrow_copy_constructible_v<EndIterator>)
@@ -42,7 +42,7 @@ public:
         return beginIterator != endIterator;
     }
 
-    reference next() noexcept(noexcept(*(std::declval<BeginIterator&>()++)))
+    result_type next() noexcept(noexcept(*(std::declval<BeginIterator&>()++)))
     {
         assert(has_next() && "Iterator is out of range");
         return *(beginIterator++);

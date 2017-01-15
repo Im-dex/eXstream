@@ -13,10 +13,10 @@ namespace detail {
 namespace flat_map {
 
 template <typename Stream>
-using stream_iterator_t = std::decay_t<decltype(std::begin(std::declval<Stream>()))>;
+using stream_iterator_t = std::decay_t<decltype(std::begin(std::declval<Stream&>()))>;
 
 template <typename Stream>
-using stream_end_iterator_t = std::decay_t<decltype(std::end(std::declval<Stream>()))>;
+using stream_end_iterator_t = std::decay_t<decltype(std::end(std::declval<Stream&>()))>;
 
 template <typename Stream, bool IsReference = false>
 class stream_hold_iterator final
@@ -28,9 +28,9 @@ public:
     using value_type = typename std::iterator_traits<stream_iterator>::value_type;
     using reference = typename std::iterator_traits<stream_iterator>::reference;
 
-    explicit stream_hold_iterator(Stream&& streamArg) noexcept(std::is_nothrow_move_constructible_v<Stream>                          &&
-                                                               noexcept(std::make_move_iterator(std::begin(std::declval<Stream>()))) &&
-                                                               noexcept(std::make_move_iterator(std::end(std::declval<Stream>()))))
+    explicit stream_hold_iterator(Stream&& streamArg) noexcept(std::is_nothrow_move_constructible_v<Stream>                           &&
+                                                               noexcept(std::make_move_iterator(std::begin(std::declval<Stream&>()))) &&
+                                                               noexcept(std::make_move_iterator(std::end(std::declval<Stream&>()))))
         : stream(std::move(streamArg)),
           iter(std::make_move_iterator(std::begin(stream))),
           end(std::make_move_iterator(std::end(stream)))
@@ -155,8 +155,8 @@ template <typename Iterator,
           typename Allocator>
 class flat_map_iterator final : public transform_iterator<Iterator>
 {
-    using function_result = std::result_of_t<const Function&(typename Iterator::reference)>;
-    using stream_t = typename result_traits<function_result>::type;
+    using function_result = std::result_of_t<const Function&(typename Iterator::result_type)>;
+    using stream_t = typename result_traits<function_result>::value_type;
 
     using stream_hold_iterator = detail::flat_map::stream_hold_iterator<
         stream_t,
@@ -168,7 +168,7 @@ class flat_map_iterator final : public transform_iterator<Iterator>
 public:
 
     using value_type = typename stream_hold_iterator::value_type;
-    using reference = typename stream_hold_iterator::reference;
+    using result_type = typename stream_hold_iterator::reference;
     using meta = meta_info<false, false, Order::Unknown>;
 
     explicit flat_map_iterator(const Iterator& iterator, const Function& function, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
@@ -196,9 +196,9 @@ public:
         return iterator.has_next() || (streamIterator.non_empty() && streamIterator.get().has_next());
     }
 
-    reference next() noexcept(detail::flat_map::is_nothrow_fetch<Iterator, Function, stream_hold_iterator>() &&
-                              noexcept(std::declval<stream_hold_iterator&>().has_next())                     &&
-                              noexcept(std::declval<stream_hold_iterator&>().next()))
+    result_type next() noexcept(detail::flat_map::is_nothrow_fetch<Iterator, Function, stream_hold_iterator>() &&
+                                noexcept(std::declval<stream_hold_iterator&>().has_next())                     &&
+                                noexcept(std::declval<stream_hold_iterator&>().next()))
     {
         assert(has_next() && "Iterator is out of range");
 
