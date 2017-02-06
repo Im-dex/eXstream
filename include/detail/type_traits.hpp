@@ -16,6 +16,25 @@ EXSTREAM_RESTORE_ALL_WARNINGS
     template <typename T>\
     constexpr bool has_ ## typeName ## _member_v = has_ ## typeName ## _member<T>::value;
 
+#define EXSTREAM_DEFINE_HAS_METHOD(methodName)\
+    template <typename T, typename... Args>\
+    class has_ ## methodName ## _method_detector final\
+    {\
+        template <typename U, typename... Us>\
+        static auto check(U&& object, Us&&... args) -> decltype(object.methodName(std::forward<Us>(args)...), std::true_type());\
+        \
+        static std::false_type check(...);\
+    public:\
+        \
+        using type = decltype(check(std::declval<T>(), std::declval<Args>()...));\
+    };\
+    \
+    template <typename T, typename... Args>\
+    using has_ ## methodName ## _method = typename has_ ## methodName  ## _method_detector<T, Args...>::type;\
+    \
+    template <typename T, typename... Args>\
+    constexpr bool has_ ## methodName ## _method_v = has_ ## methodName ## _method<T, Args...>::value;
+
 namespace std {
 
 #if defined(EXSTREAM_GCC) || defined(EXSTREAM_CLANG)
@@ -171,23 +190,33 @@ struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
 template <typename T>
 constexpr bool is_reference_wrapper_v = is_reference_wrapper<T>::value;
 
-#define EXSTREAM_DEFINE_HAS_METHOD(methodName)\
-    template <typename T, typename... Args>\
-    class has_ ## methodName ## _method_detector final\
-    {\
-        template <typename U, typename... Us>\
-        static auto check(U&& object, Us&&... args) -> decltype(object.methodName(std::forward<Us>(args)...), std::true_type());\
-        \
-        static std::false_type check(...);\
-    public:\
-        \
-        using type = decltype(check(std::declval<T>(), std::declval<Args>()...));\
-    };\
-    \
-    template <typename T, typename... Args>\
-    using has_ ## methodName ## _method = typename has_ ## methodName  ## _method_detector<T, Args...>::type;\
-    \
-    template <typename T, typename... Args>\
-    constexpr bool has_ ## methodName ## _method_v = has_ ## methodName ## _method<T, Args...>::value;
+template <typename T>
+struct is_bool_constant : std::false_type {};
+
+template <bool Value>
+struct is_bool_constant<std::bool_constant<Value>> : std::true_type {};
+
+template <typename T>
+constexpr bool is_bool_constant_v = is_bool_constant<T>::value;
+
+// TODO: test
+template <typename T>
+struct is_pair : std::false_type {};
+
+template <typename First, typename Second>
+struct is_pair<std::pair<First, Second>> : std::true_type {};
+
+template <typename T>
+constexpr bool is_pair_v = is_pair<T>::value;
+
+// TODO: test
+template <size_t N, typename T>
+struct is_tuple_n : std::false_type {};
+
+template <size_t N, typename... Ts>
+struct is_tuple_n<N, std::tuple<Ts...>> : std::bool_constant<sizeof...(Ts) == N> {};
+
+template <size_t N, typename T>
+constexpr bool is_tuple_n_v = is_tuple_n<N, T>::value;
 
 } // exstream namespace

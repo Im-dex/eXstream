@@ -81,7 +81,7 @@ public:
 
     size_t elements_count() const noexcept
     {
-        return npos;
+        return unknown_count;
     }
 
 private:
@@ -93,7 +93,7 @@ private:
     void init_set()
     {
         const auto count = iterator.elements_count();
-        if (count != npos)
+        if (count != unknown_count)
             set.reserve(count);
     }
 

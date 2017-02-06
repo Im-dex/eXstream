@@ -193,3 +193,13 @@ TEST(TEST_CASE_NAME, has_method_Test)
     EXPECT_FALSE((has_push_back_method_v<without_push_back, int>));
     EXPECT_FALSE((has_push_back_method_v<std::map<int, float>>));
 }
+
+TEST(TEST_CASE_NAME, is_bool_constant_Test)
+{
+    EXPECT_TRUE(is_bool_constant_v<std::true_type>);
+    EXPECT_TRUE(is_bool_constant_v<std::false_type>);
+    EXPECT_TRUE(is_bool_constant_v<std::bool_constant<true>>);
+    EXPECT_TRUE(is_bool_constant_v<std::bool_constant<false>>);
+
+    EXPECT_FALSE(is_bool_constant_v<bool>);
+}

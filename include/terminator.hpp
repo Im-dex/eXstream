@@ -1,10 +1,13 @@
 #pragma once
 
-#include "detail/container_factory_traits.hpp"
+#include "detail/bool_c.hpp"
+#include "utility.hpp"
 
 namespace exstream {
 namespace detail {
 namespace terminate {
+
+static constexpr int suppress_unnecessary_error = 0;
 
 template <typename Self>
 constexpr bool is_nothrow_skip() noexcept
@@ -26,22 +29,6 @@ constexpr bool is_nothrow_elements_count() noexcept
     return noexcept(std::declval<const Self&>().get_iterator().elements_count());
 }
 
-template <typename Self,
-          typename Container,
-          typename... Args>
-constexpr bool is_nothrow_to() noexcept
-{
-    using traits = container_factory_traits<Container>;;
-    using iterator_t = typename Self::iterator_type;
-    using result_type = typename iterator_t::result_type;
-
-    return std::is_nothrow_constructible_v<Container, Args...>                               &&
-           noexcept(traits::append(std::declval<Container&>(), std::declval<result_type>())) &&
-           noexcept(traits::reserve(std::declval<Container&>(), size_t(0)))                  &&
-           terminate::is_nothrow_elements_count<Self>()                                      &&
-           terminate::is_nothrow_next<Self>();
-}
-
 }} // detail::terminate namespace
 
 template <typename T, typename Self>
@@ -49,11 +36,11 @@ class terminator
 {
 public:
 
-    terminator() noexcept = default;
+    terminator() = default;
     terminator(terminator&&) = default;
 
-    terminator(const terminator&) = delete;
-    terminator& operator= (const terminator&) = delete;
+    terminator(const terminator&) = default;
+    terminator& operator= (const terminator&) = default;
 
     size_t count() noexcept(detail::terminate::is_nothrow_skip<Self>() &&
                             detail::terminate::is_nothrow_elements_count<Self>())
@@ -61,58 +48,74 @@ public:
         auto iter = self().get_iterator();
         const auto elementsCount = iter.elements_count();
 
-        if (elementsCount != npos)
+        if (elementsCount != unknown_count)
             return elementsCount;
 
-        auto counter = size_t(0);
+        size_t counter = 0;
         while (iter.has_next())
         {
-            counter++;
+            ++counter;
             iter.skip();
         }
 
         return counter;
     }
 
-    template <typename Container, typename... Args>
-    Container to(Args&&... args) noexcept(detail::terminate::is_nothrow_to<Self, Container, Args...>())
+    template <typename OutputIter>
+    void fill(OutputIter&& outIter)
     {
-        using traits = container_factory_traits<Container>;
-        using condition = std::conjunction<
-            std::is_constructible<Container, Args...>,
-            std::negation<
-                std::is_same<traits, unsupported_container_factory_traits>
-            >
-        >;
+        fill(std::forward<OutputIter>(outIter), is_output_iterator<std::decay_t<OutputIter>>());
+    }
 
-        return to<Container, traits>(condition(), std::forward<Args>(args)...);
+    template <typename Collector>
+    decltype(auto) collect(Collector&& collector)
+    {
+        return collect(std::forward<Collector>(collector), is_collector<Collector, T>());
     }
 
 private:
 
-    template <typename Container, typename Traits, typename... Args>
-    Container to(std::true_type, Args&&... args) noexcept(detail::terminate::is_nothrow_to<Self, Container, Args...>())
+    template <typename OutputIter>
+    void fill(OutputIter outIter, std::true_type /* is output iterator */)
     {
-        Container container(std::forward<Args>(args)...);
         auto iter = self().get_iterator();
-        const auto elements_count = iter.elements_count();
+        while (!iter.has_next())
+        {
+            *outIter = iter.next();
+            ++outIter;
+        }
+    }
 
-        if (elements_count != npos)
-            Traits::reserve(container, elements_count);
+    template <typename OutputIter>
+    void fill(OutputIter, std::false_type /* is output iterator */) noexcept
+    {
+        static_assert(false_v<OutputIter>, "Output iterator expected");
+    }
+
+    template <typename Collector>
+    decltype(auto) collect(Collector&& collector, std::true_type /* is valid collector */)
+    {
+        auto builder = collector.builder(type_t<T>());
+        auto iter = self().get_iterator();
+
+        const auto elementsCount = iter.elements_count();
+        if (elementsCount != unknown_count)
+            builder.reserve(elementsCount);
 
         while (iter.has_next())
-            Traits::append(container, iter.next());
+            builder.append(iter.next());
 
-        return std::move(container);
+        return builder.build();
     }
 
-    template <typename Container, typename Traits, typename... Args>
-    [[noreturn]] static Container to(std::false_type, Args&&...) noexcept
+    template <typename Collector>
+    int collect(Collector&&, std::false_type /* is valid collector */) noexcept
     {
-        static_assert(std::is_constructible_v<Container, Args...>, "Container is not constructible from the passed arguments");
-        static_assert(!std::is_same_v<Traits, unsupported_container_factory_traits>, "Container isn't meet requrements"); // TODO: output requirements
-        std::terminate(); // dummy terminate
+        static_assert(false_v<Collector>, "Invalid collector");
+        return detail::terminate::suppress_unnecessary_error;
     }
+
+protected:
 
     const Self& self() const noexcept
     {

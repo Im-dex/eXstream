@@ -2,6 +2,7 @@
 
 #include "transform_iterator.hpp"
 #include "detail/result_traits.hpp"
+#include "meta_info.hpp"
 
 EXSTREAM_SUPPRESS_ALL_WARNINGS
 #include <cassert>
@@ -19,7 +20,7 @@ public:
 
     using value_type = typename traits::value_type;
     using result_type = typename traits::result_type;
-    using meta = Meta;
+    using meta = meta_info<false, false, Order::Unknown>;
 
     template <typename Allocator>
     explicit map_iterator(const Iterator& iterator, const Function& function, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)

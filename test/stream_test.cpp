@@ -1,6 +1,7 @@
 #include "test.hpp"
 
 #include "stream_of.hpp"
+#include "collectors/collectors.hpp"
 
 using namespace exstream;
 using namespace testing;
@@ -21,7 +22,7 @@ TEST(TEST_CASE_NAME, _Test)
         .filter([](int x) { return x > 0; })
         .distinct()
         //.count();
-        .to<std::vector<int>>();
+        .collect(to_unordered_multiset());
 
     EXPECT_THAT(e, UnorderedElementsAre(1, 2, 4, 5, 6));
 }

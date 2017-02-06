@@ -61,7 +61,7 @@ public:
 
     size_t elements_count() const noexcept
     {
-        return npos;
+        return unknown_count;
     }
 
 private:

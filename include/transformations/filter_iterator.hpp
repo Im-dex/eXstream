@@ -4,6 +4,8 @@
 #include "option.hpp"
 #include "detail/scope_guard.hpp"
 
+// TODO: optimize filter ordered with greater, less, less_or_eq etc
+
 namespace exstream {
 namespace detail {
 namespace filter {
@@ -81,7 +83,7 @@ public:
 
     size_t elements_count() const noexcept
     {
-        return npos;
+        return unknown_count;
     }
 
 private:
