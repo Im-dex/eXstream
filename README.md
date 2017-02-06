@@ -15,10 +15,10 @@ stream_of(persons)
     .flat_map([](auto person) { return std::ref(person.marks); })
     .filter  ([](auto mark)   { return mark > 0; })
     .distinct()
-    .to<std::set<int>>();
+    .collect(to_set());
     
 stream_of(persons)
     .map   ([](auto person) { return std::ref(person.name); })
     .filter([](auto name)   { return name != "Mike"s; })
-    .to<std::list<std::string>>();
+    .collect(to_list());
 ```
