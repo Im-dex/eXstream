@@ -5,7 +5,7 @@
 namespace std {
 
 template <typename T, typename Allocator>
-class vector;
+class deque;
 
 template <typename T, typename Container>
 class stack;
@@ -22,7 +22,7 @@ auto to_stack(std::stack<T, Container>&& stack)
 
 inline auto to_stack() noexcept
 {
-    return generic_adaptor_collector<std::vector, std::stack>();
+    return generic_adaptor_collector<std::deque, std::stack>();
 }
 
 } // exstream namespace

@@ -87,7 +87,7 @@ struct generic_unordered_set_collector final
     template <typename T>
     auto builder(type_t<T>)
     {
-        return unordered_set_builder<T, std::hash<T>, std::less<T>, std::allocator<T>, Set>();
+        return unordered_set_builder<T, std::hash<T>, std::equal_to<T>, std::allocator<T>, Set>();
     }
 };
 

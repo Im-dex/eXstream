@@ -61,11 +61,11 @@ public:
                             is_random_access_iterator_v<EndIterator>>()
             .then([this](auto)
             {
-                return std::distance(beginIterator, endIterator);
+                return static_cast<size_t>(std::distance(beginIterator, endIterator));
             })
             .else_([](auto) noexcept
             {
-                return npos;
+                return unknown_count;
             })(nothing);
     }
 

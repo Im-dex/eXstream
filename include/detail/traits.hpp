@@ -65,7 +65,13 @@ template <typename T>
 using is_output_iterator = detail::is_iterator_with_tag<T, std::output_iterator_tag>;
 
 template <typename T>
-constexpr bool is_output_iterator_v = is_output_iterator<T>::value; // TODO: test
+constexpr bool is_output_iterator_v = is_output_iterator<T>::value;
+
+template <typename T>
+using is_input_iterator = detail::is_iterator_with_tag<T, std::input_iterator_tag>;
+
+template <typename T>
+constexpr bool is_input_iterator_v = is_input_iterator<T>::value;
 
 template <typename T>
 using is_forward_iterator = detail::is_iterator_with_tag<T, std::forward_iterator_tag>;
@@ -106,10 +112,10 @@ struct is_iterable
 {
     template <typename U1, typename U2>
     static auto check(U1& x, const U2& y) -> decltype(std::conjunction<
-        is_forward_iterator<decltype(std::begin(x))>, // TODO: relax to InputIterator???
-        is_forward_iterator<decltype(std::end(x))>,
-        is_forward_iterator<decltype(std::begin(y))>,
-        is_forward_iterator<decltype(std::end(y))>
+        is_input_iterator<decltype(std::begin(x))>,
+        is_input_iterator<decltype(std::end(x))>,
+        is_input_iterator<decltype(std::begin(y))>,
+        is_input_iterator<decltype(std::end(y))>
     >{});
 
     static std::false_type check(...);
@@ -122,10 +128,10 @@ struct is_reverse_iterable
 {
     template <typename U1, typename U2>
     static auto check(U1& x, const U2& y) -> decltype(std::conjunction<
-        is_forward_iterator<decltype(std::rbegin(x))>, // TODO: relax to InputIterator???
-        is_forward_iterator<decltype(std::rend(x))>,
-        is_forward_iterator<decltype(std::rbegin(y))>,
-        is_forward_iterator<decltype(std::rend(y))>
+        is_input_iterator<decltype(std::rbegin(x))>,
+        is_input_iterator<decltype(std::rend(x))>,
+        is_input_iterator<decltype(std::rbegin(y))>,
+        is_input_iterator<decltype(std::rend(y))>
     >{});
 
     static std::false_type check(...);

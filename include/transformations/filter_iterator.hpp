@@ -7,23 +7,6 @@
 // TODO: optimize filter ordered with greater, less, less_or_eq etc
 
 namespace exstream {
-namespace detail {
-namespace filter {
-
-template <typename Iterator, typename Function>
-constexpr bool is_nothrow_fetch() noexcept
-{
-    using result_type = typename Iterator::result_type;
-    using storage = typename result_traits<result_type>::storage;
-    using function_arg = std::add_lvalue_reference_t<std::add_const_t<typename Iterator::value_type>>;
-
-    return noexcept(std::declval<Iterator&>().has_next())                          &&
-           noexcept(std::declval<Iterator&>().next())                              &&
-           noexcept(std::declval<const Function&>()(std::declval<function_arg>())) &&
-           noexcept(std::declval<option<storage>&>().emplace(std::declval<result_type>()));
-}
-
-}} // detail::filter namespace
 
 template <typename Iterator,
           typename Function,
@@ -59,13 +42,13 @@ public:
     filter_iterator& operator= (const filter_iterator&) = delete;
     filter_iterator& operator= (filter_iterator&&) = delete;
 
-    bool has_next() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
+    bool has_next()
     {
         if (cache.empty()) fetch();
         return iterator.has_next() || cache.non_empty();
     }
 
-    result_type next() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
+    result_type next()
     {
         if (cache.empty()) fetch();
         EXSTREAM_SCOPE_SUCCESS noexcept(std::is_nothrow_destructible_v<storage>)
@@ -75,7 +58,7 @@ public:
         return cache.get().release();
     }
 
-    void skip() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
+    void skip()
     {
         cache.reset();
         fetch();
@@ -90,7 +73,7 @@ private:
 
     using storage = typename traits::storage;
 
-    void fetch() noexcept(detail::filter::is_nothrow_fetch<Iterator, Function>())
+    void fetch()
     {
         while (iterator.has_next())
         {

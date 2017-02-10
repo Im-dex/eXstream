@@ -103,6 +103,27 @@ TEST(TEST_CASE_NAME, is_iterator_Test)
     EXPECT_FALSE(is_iterator_v<float>);
 }
 
+TEST(TEST_CASE_NAME, is_output_iterator_Test)
+{
+    EXPECT_TRUE(is_output_iterator_v<std::ostream_iterator<int>>);
+    EXPECT_TRUE(is_output_iterator_v<std::insert_iterator<std::string>>);
+
+    EXPECT_FALSE(is_output_iterator_v<int*>);
+    EXPECT_FALSE(is_output_iterator_v<std::string::iterator>);
+    EXPECT_FALSE(is_output_iterator_v<std::list<int>::const_reverse_iterator>);
+}
+
+TEST(TEST_CASE_NAME, is_input_iterator_Test)
+{
+    EXPECT_TRUE(is_input_iterator_v<int*>);
+    EXPECT_TRUE(is_input_iterator_v<const int*>);
+    EXPECT_TRUE(is_input_iterator_v<std::string::iterator>);
+    EXPECT_TRUE(is_input_iterator_v<std::set<int>::const_iterator>);
+    EXPECT_TRUE(is_input_iterator_v<std::istream_iterator<int>>);
+
+    EXPECT_FALSE(is_input_iterator_v<int>);
+}
+
 TEST(TEST_CASE_NAME, is_forward_iterator_Test)
 {
     EXPECT_TRUE(is_forward_iterator_v<int*>);
@@ -111,6 +132,8 @@ TEST(TEST_CASE_NAME, is_forward_iterator_Test)
     EXPECT_TRUE(is_forward_iterator_v<std::set<int>::reverse_iterator>);
 
     EXPECT_FALSE(is_forward_iterator_v<int>);
+    EXPECT_FALSE(is_forward_iterator_v<std::ostream_iterator<int>>);
+    EXPECT_FALSE(is_forward_iterator_v<std::istream_iterator<int>>);
 }
 
 TEST(TEST_CASE_NAME, is_random_access_iterator_Test)

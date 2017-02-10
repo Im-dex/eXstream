@@ -25,13 +25,13 @@ public:
 
     forward_list_builder()
         : list(),
-          last(list.begin())
+          last(list.before_begin())
     {
     }
 
     explicit forward_list_builder(list_t&& list)
         : list(std::move(list)),
-          last(list.begin())
+          last(list.before_begin())
     {
     }
 

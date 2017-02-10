@@ -69,7 +69,8 @@ struct generic_priority_queue_collector final
     template <typename T>
     auto builder(type_t<T>)
     {
-        return priority_queue_builder<T, std::vector<T, std::allocator<T>>, std::less<T>>();
+        using container_t = std::vector<T, std::allocator<T>>;
+        return priority_queue_builder<T, container_t, std::less<T>>();
     }
 };
 

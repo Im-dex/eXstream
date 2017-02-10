@@ -73,13 +73,25 @@ public:
         return collect(std::forward<Collector>(collector), is_collector<Collector, T>());
     }
 
+    template <typename Function>
+    void foreach(Function&& function)
+    {
+        using argument_type = typename Self::iterator_type::result_type; // TODO: simplify
+        foreach(std::forward<Function>(function), is_invokable<Function, argument_type>());
+    }
+
 private:
 
+    const Self& self() const noexcept
+    {
+        return static_cast<const Self&>(*this);
+    }
+
     template <typename OutputIter>
-    void fill(OutputIter outIter, std::true_type /* is output iterator */)
+    void fill(OutputIter&& outIter, std::true_type /* is output iterator */)
     {
         auto iter = self().get_iterator();
-        while (!iter.has_next())
+        while (iter.has_next())
         {
             *outIter = iter.next();
             ++outIter;
@@ -87,7 +99,7 @@ private:
     }
 
     template <typename OutputIter>
-    void fill(OutputIter, std::false_type /* is output iterator */) noexcept
+    void fill(OutputIter&&, std::false_type /* is output iterator */) const noexcept
     {
         static_assert(false_v<OutputIter>, "Output iterator expected");
     }
@@ -109,17 +121,25 @@ private:
     }
 
     template <typename Collector>
-    int collect(Collector&&, std::false_type /* is valid collector */) noexcept
+    int collect(Collector&&, std::false_type /* is valid collector */) const noexcept
     {
         static_assert(false_v<Collector>, "Invalid collector");
         return detail::terminate::suppress_unnecessary_error;
     }
 
-protected:
-
-    const Self& self() const noexcept
+    template <typename Function>
+    void foreach(Function&& function, std::true_type /* is callable */)
     {
-        return static_cast<const Self&>(*this);
+        auto iter = self().get_iterator();
+
+        while (iter.has_next())
+            function(iter.next());
+    }
+
+    template <typename Function>
+    void foreach(Function&&, std::false_type /* is callable */) const noexcept
+    {
+        static_assert(false_v<Function>, "Invalid function");
     }
 };
 

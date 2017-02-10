@@ -47,21 +47,16 @@ public:
         return iter != end;
     }
 
-    reference next() noexcept(noexcept(*(std::declval<stream_iterator>()++)))
+    reference next() noexcept(noexcept(*(std::declval<stream_iterator&>()++)))
     {
         assert(has_next() && "Iterator is out of range");
         return *(iter++);
     }
 
-    void skip() noexcept(noexcept(++std::declval<stream_iterator>()))
+    void skip() noexcept(noexcept(++std::declval<stream_iterator&>()))
     {
         assert(has_next() && "Iterator is out of range");
         ++iter;
-    }
-
-    size_t elements_count() const noexcept
-    {
-        return unknown_count;
     }
 
 private:
@@ -135,18 +130,6 @@ private:
     stream_end_iterator end;
 };
 
-template <typename Iterator,
-          typename Function,
-          typename StreamHoldIterator>
-constexpr bool is_nothrow_fetch() noexcept
-{
-    return noexcept(
-        std::declval<option<StreamHoldIterator>&>().emplace(
-            std::declval<const Function&>()(std::declval<Iterator&>().next())
-        )
-    );
-}
-
 }} // detail::flat_map namespace
 
 template <typename Iterator,
@@ -190,15 +173,13 @@ public:
 
     flat_map_iterator& operator= (const flat_map_iterator&) = delete;
 
-    bool has_next() noexcept(detail::flat_map::is_nothrow_fetch<Iterator, Function, stream_hold_iterator>())
+    bool has_next()
     {
         if (streamIterator.empty()) fetch();
         return iterator.has_next() || (streamIterator.non_empty() && streamIterator.get().has_next());
     }
 
-    result_type next() noexcept(detail::flat_map::is_nothrow_fetch<Iterator, Function, stream_hold_iterator>() &&
-                                noexcept(std::declval<stream_hold_iterator&>().has_next())                     &&
-                                noexcept(std::declval<stream_hold_iterator&>().next()))
+    result_type next()
     {
         assert(has_next() && "Iterator is out of range");
 
@@ -206,9 +187,7 @@ public:
         return streamIterator.get().next();
     }
 
-    void skip() noexcept(detail::flat_map::is_nothrow_fetch<Iterator, Function, stream_hold_iterator>() &&
-                         noexcept(std::declval<stream_hold_iterator&>().has_next())                     &&
-                         noexcept(std::declval<stream_hold_iterator&>().skip()))
+    void skip()
     {
         assert(has_next() && "Iterator is out of range");
 
@@ -216,9 +195,14 @@ public:
         streamIterator.get().skip();
     }
 
+    size_t elements_count() const noexcept
+    {
+        return unknown_count;
+    }
+
 private:
 
-    void fetch() noexcept(detail::flat_map::is_nothrow_fetch<Iterator, Function, stream_hold_iterator>())
+    void fetch()
     {
         streamIterator.emplace(function(iterator.next()));
     }

@@ -28,8 +28,7 @@ template <typename T,
           typename Meta>
 class independent_transformation;
 
-template <typename T,
-          typename Self>
+template <typename T, typename Self>
 class with_transformations
 {
 public:
@@ -52,12 +51,14 @@ public:
     template <typename Function>
     auto flat_map(const Function& function) const noexcept
     {
-        return constexpr_if<is_invokable_v<const Function&, T>>()
+        using arg_type = typename Self::iterator_type::result_type; // TODO: simplify
+
+        return constexpr_if<is_invokable_v<const Function&, arg_type>>()
             .then([&](auto) noexcept
             {
-                using traits = result_traits<std::result_of_t<const Function&(T)>>;
+                using function_result = std::result_of_t<const Function&(arg_type)>;
 
-                return constexpr_if<is_iterable_v<typename traits::value_type>>()
+                return constexpr_if<is_iterable<std::decay_t<function_result>>::value>()
                     .then([&](auto) noexcept
                     {
                         using allocator = typename Self::allocator;
@@ -68,7 +69,7 @@ public:
                     })
                     .else_([](auto) noexcept
                     {
-                        static_assert(false, "Function return type should be iterable");
+                        static_assert(false, "Function return type needs to be iterable");
                         return error_transformation();
                     })(nothing);
             })
