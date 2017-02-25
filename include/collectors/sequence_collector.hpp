@@ -1,6 +1,5 @@
 #pragma once
 
-#include "detail/constexpr_if.hpp"
 #include "detail/traits.hpp"
 
 namespace exstream {
@@ -28,11 +27,7 @@ public:
 
     void reserve(const size_t size) noexcept(!detail::has_reserve_method_v<sequence_t, size_t>)
     {
-        constexpr_if<detail::has_reserve_method_v<sequence_t, size_t>>()
-            .then([&](auto)
-            {
-                sequence.reserve(size);
-            })(nothing);
+        reserve(size, detail::has_reserve_method<sequence_t, size_t>());
     }
 
     void append(const T& value)
@@ -51,6 +46,15 @@ public:
     }
 
 private:
+
+    void reserve(const size_t size, std::true_type /* has reserve method */)
+    {
+        sequence.reserve(size);
+    }
+
+    static void reserve(const size_t, std::false_type /* has reserve method */) noexcept
+    {
+    }
 
     sequence_t sequence;
 };

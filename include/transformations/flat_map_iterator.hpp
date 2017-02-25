@@ -134,8 +134,7 @@ private:
 
 template <typename Iterator,
           typename Function,
-          typename Meta,
-          typename Allocator>
+          typename Meta>
 class flat_map_iterator final : public transform_iterator<Iterator>
 {
     using function_result = std::result_of_t<const Function&(typename Iterator::result_type)>;
@@ -154,14 +153,14 @@ public:
     using result_type = typename stream_hold_iterator::reference;
     using meta = meta_info<false, false, Order::Unknown>;
 
-    explicit flat_map_iterator(const Iterator& iterator, const Function& function, const Allocator&) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
+    explicit flat_map_iterator(const Iterator& iterator, const Function& function) noexcept(std::is_nothrow_copy_constructible_v<Iterator>)
         : transform_iterator(iterator),
           streamIterator(),
           function(function)
     {
     }
 
-    explicit flat_map_iterator(Iterator&& iterator, const Function& function, const Allocator&) noexcept(std::is_nothrow_move_constructible_v<Iterator>)
+    explicit flat_map_iterator(Iterator&& iterator, const Function& function) noexcept(std::is_nothrow_move_constructible_v<Iterator>)
         : transform_iterator(std::move(iterator)),
           streamIterator(),
           function(function)

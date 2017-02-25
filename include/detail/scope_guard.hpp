@@ -50,6 +50,7 @@ private:
 };
 
 namespace detail {
+namespace scope_guard {
 
 template <typename Function, bool ExecuteOnException>
 constexpr bool is_nothrow_destructor() noexcept
@@ -57,46 +58,48 @@ constexpr bool is_nothrow_destructor() noexcept
     return ExecuteOnException ? true : noexcept(std::declval<Function>()());
 }
 
-} // detail namespace
+}} // detail::scope_guard namespace
 
 template <typename Function, bool ExecuteOnException>
-class scope_guard_for_new_excepotion final
+class scope_guard_for_new_exception final
 {
 public:
 
-    explicit scope_guard_for_new_excepotion(Function&& function) noexcept(std::is_nothrow_move_constructible_v<Function>)
+    explicit scope_guard_for_new_exception(Function&& function) noexcept(std::is_nothrow_move_constructible_v<Function>)
         : function(std::move(function)),
           counter()
     {
     }
 
-    scope_guard_for_new_excepotion(scope_guard_for_new_excepotion&& that) noexcept(std::is_nothrow_move_constructible_v<Function>)
+    scope_guard_for_new_exception(scope_guard_for_new_exception&& that) noexcept(std::is_nothrow_move_constructible_v<Function>)
         : function(std::move(that.function)),
           counter(std::move(that.counter))
     {
     }
 
-    scope_guard_for_new_excepotion(const scope_guard_for_new_excepotion&) = delete;
+    scope_guard_for_new_exception(const scope_guard_for_new_exception&) = delete;
 
-    scope_guard_for_new_excepotion& operator= (const scope_guard_for_new_excepotion&) = delete;
-    scope_guard_for_new_excepotion& operator= (scope_guard_for_new_excepotion&&) = delete;
+    scope_guard_for_new_exception& operator= (const scope_guard_for_new_exception&) = delete;
+    scope_guard_for_new_exception& operator= (scope_guard_for_new_exception&&) = delete;
 
-    ~scope_guard_for_new_excepotion() noexcept(detail::is_nothrow_destructor<Function, ExecuteOnException>())
+    ~scope_guard_for_new_exception() noexcept(detail::scope_guard::is_nothrow_destructor<Function, ExecuteOnException>())
     {
-        constexpr_if<ExecuteOnException>()
-            .then([this](auto) noexcept
-            {
-                if (counter.is_new_uncaught_exception())
-                    function();
-            })
-            .else_([this](auto)
-            {
-                if (!counter.is_new_uncaught_exception())
-                    function();
-            })(nothing);
+        execute(std::bool_constant<ExecuteOnException>());
     }
 
 private:
+
+    void execute(std::true_type /* execute on exception */) noexcept
+    {
+        if (counter.is_new_uncaught_exception())
+            function();
+    }
+
+    void execute(std::false_type /* execute on exception */) noexcept(noexcept(std::declval<Function&>()()))
+    {
+        if (!counter.is_new_uncaught_exception())
+            function();
+    }
 
     Function function;
     uncaught_exceptions_counter counter;
@@ -110,17 +113,17 @@ scope_guard<std::decay_t<Function>> operator+ (ScopeExit, Function&& function)
 }
 
 template <typename Function>
-scope_guard_for_new_excepotion<std::decay_t<Function>, true> operator+ (ScopeFailure, Function&& function)
+scope_guard_for_new_exception<std::decay_t<Function>, true> operator+ (ScopeFailure, Function&& function)
     noexcept(std::is_nothrow_move_constructible_v<std::decay_t<Function>>)
 {
-    return scope_guard_for_new_excepotion<std::decay_t<Function>, true>(std::forward<Function>(function));
+    return scope_guard_for_new_exception<std::decay_t<Function>, true>(std::forward<Function>(function));
 }
 
 template <typename Function>
-scope_guard_for_new_excepotion<std::decay_t<Function>, false> operator+ (ScopeSuccess, Function&& function)
+scope_guard_for_new_exception<std::decay_t<Function>, false> operator+ (ScopeSuccess, Function&& function)
     noexcept(std::is_nothrow_move_constructible_v<std::decay_t<Function>>)
 {
-    return scope_guard_for_new_excepotion<std::decay_t<Function>, false>(std::forward<Function>(function));
+    return scope_guard_for_new_exception<std::decay_t<Function>, false>(std::forward<Function>(function));
 }
 
 } // exstream namespace

@@ -4,7 +4,7 @@
 #include "detail/partial_application.hpp"
 #include "detail/result_traits.hpp"
 #include "detail/constexpr_if.hpp"
-#include "error_transformation.hpp"
+#include "bad_stream.hpp"
 
 #include "map_iterator.hpp"
 #include "flat_map_iterator.hpp"
@@ -17,16 +17,20 @@ template <typename T,
           typename Source,
           typename Function,
           typename TransformRange,
-          typename Allocator,
           typename Meta>
 class transformation;
 
 template <typename T,
           typename Source,
           typename TransformRange,
-          typename Allocator,
           typename Meta>
 class independent_transformation;
+
+enum class inappropriate_map_predicate;
+enum class map_predicate_returns_void;
+enum class inappropriate_flat_map_predicate;
+enum class inappropriate_flat_map_predicate_result;
+enum class inappropriate_filter_predicate;
 
 template <typename T, typename Self>
 class with_transformations
@@ -36,105 +40,137 @@ public:
     template <typename Function>
     auto map(const Function& function) const noexcept
     {
-        return constexpr_if<(is_invokable_v<const Function&, T>)>()
-            .then([&](auto) noexcept
-            {
-                return make_transformation<map_iterator>(function);
-            })
-            .else_([](auto) noexcept
-            {
-                static_assert(false, "Illegal function signature");
-                return error_transformation();
-            })(nothing);
+        static_assert(is_invokable_v<const Function&, T>,
+                      "'map' predicate needs to be a function that takes a stream element and returns non-void value");
+
+        return map(function, is_invokable<const Function&, T>());
     }
 
     template <typename Function>
     auto flat_map(const Function& function) const noexcept
     {
-        using arg_type = typename Self::iterator_type::result_type; // TODO: simplify
+        static_assert(is_invokable_v<const Function&, T>,
+                      "'flat_map' predicate needs to be a function that takes a stream element and returns 'Iterable' value");
 
-        return constexpr_if<is_invokable_v<const Function&, arg_type>>()
-            .then([&](auto) noexcept
-            {
-                using function_result = std::result_of_t<const Function&(arg_type)>;
-
-                return constexpr_if<is_iterable<std::decay_t<function_result>>::value>()
-                    .then([&](auto) noexcept
-                    {
-                        using allocator = typename Self::allocator;
-
-                        return make_transformation<
-                            partial_apply4<flat_map_iterator, allocator>::bind_4
-                        >(function);
-                    })
-                    .else_([](auto) noexcept
-                    {
-                        static_assert(false, "Function return type needs to be iterable");
-                        return error_transformation();
-                    })(nothing);
-            })
-            .else_([](auto) noexcept
-            {
-                static_assert(false, "Illegal function signature");
-                return error_transformation();
-            })(nothing);
+        return flat_map(function, is_invokable<const Function&, T>());
     }
 
     template <typename Function>
     auto filter(const Function& function) const noexcept
     {
-        return constexpr_if<is_callable_v<const Function&, bool, T>>()
-            .then([&](auto) noexcept
-            {
-                return make_transformation<filter_iterator>(function);
-            })
-            .else_([](auto) noexcept
-            {
-                static_assert(false, "Illegal function signature");
-                return error_transformation();
-            })(nothing);
+        static_assert(is_callable_v<const Function&, bool, T>,
+                      "'filter' predicate needs to be a function that takes a stream element and returns boolean value");
+
+        return filter(function, is_callable<const Function&, bool, T>());
     }
 
-    auto distinct() const noexcept
+    template <typename Allocator = std::allocator<T>>
+    auto distinct(Allocator&& alloc = Allocator()) const noexcept
     {
-        using allocator = typename Self::allocator;
-
-        return make_transformation<partial_apply3<distinct_iterator, allocator>::bind_3>();
+        return make_independent_transformation<distinct_iterator>(std::forward<Allocator>(alloc));
     }
 
 private:
+
+    template <typename Function>
+    auto map(const Function& function, std::true_type) const noexcept
+    {
+        using result = std::result_of_t<const Function&(T)>;
+
+        static_assert(!std::is_void_v<result>, "'map' predicate should returns non-void value");
+        return map_impl(function, std::negation<std::is_void<result>>());
+    }
+
+    template <typename Function>
+    static auto map(const Function&, std::false_type) noexcept
+    {
+        return bad_stream<inappropriate_map_predicate>();
+    }
+
+    template <typename Function>
+    auto map_impl(const Function& function, std::true_type) const noexcept
+    {
+        return make_transformation<map_iterator>(function);
+    }
+
+    template <typename Function>
+    static auto map_impl(const Function&, std::false_type) noexcept
+    {
+        return bad_stream<map_predicate_returns_void>();
+    }
+
+    template <typename Function>
+    auto flat_map(const Function& function, std::true_type) const noexcept
+    {
+        using result = std::result_of_t<const Function&(T)>;
+
+        static_assert(is_iterable_v<result>, "'flat_map' predicate should returns 'Iterable' value");
+
+        return flat_map_impl(function, is_iterable<result>());
+    }
+
+    template <typename Function>
+    static auto flat_map(const Function&, std::false_type) noexcept
+    {
+        return bad_stream<inappropriate_flat_map_predicate>();
+    }
+
+    template <typename Function>
+    auto flat_map_impl(const Function& function, std::true_type) const noexcept
+    {
+        return make_transformation<flat_map_iterator>(function);
+    }
+
+    template <typename Function>
+    static auto flat_map_impl(const Function&, std::false_type) noexcept
+    {
+        return bad_stream<inappropriate_flat_map_predicate_result>();
+    }
+
+    template <typename Function>
+    auto filter(const Function& function, std::true_type) const noexcept
+    {
+        return make_transformation<filter_iterator>(function);
+    }
+
+    template <typename Function>
+    static auto filter(const Function&, std::false_type) noexcept
+    {
+        return bad_stream<inappropriate_filter_predicate>();
+    }
 
     const Self& self() const noexcept
     {
         return static_cast<const Self&>(*this);
     }
 
-    template <template <typename, typename, typename> class TransformIterator, typename Function>
-    auto make_transformation(const Function& function) const noexcept
+    template <template <typename, typename, typename> class TransformIterator,
+              typename Function,
+              typename... Args>
+    auto make_transformation(const Function& function, Args&&... args) const noexcept
     {
         using self_iterator_type = typename Self::iterator_type;
-        using allocator = typename Self::allocator;
         using meta = typename Self::meta;
 
         using iterator_type = TransformIterator<self_iterator_type, Function, meta>;
         using new_meta = typename iterator_type::meta;
         using value_type = typename iterator_type::value_type;
 
-        return transformation<value_type, Self, Function, iterator_type, allocator, new_meta>(self(), function, self().get_allocator());
+        return transformation<value_type, Self, Function, iterator_type, new_meta>(self(), function, std::forward<Args>(args)...);
     }
 
-    template <template <typename, typename> class TransformIterator>
-    auto make_transformation() const noexcept
+    template <template <typename, typename> class TransformIterator,
+              typename... Args>
+    auto make_independent_transformation(Args&&... args) const noexcept
     {
         using self_iterator_type = typename Self::iterator_type;
-        using allocator = typename Self::allocator;
         using meta = typename Self::meta;
 
         using iterator_type = TransformIterator<self_iterator_type, meta>;
         using new_meta = typename iterator_type::meta;
         using value_type = typename iterator_type::value_type;
 
-        return independent_transformation<value_type, Self, iterator_type, allocator, new_meta>(self(), self().get_allocator());
+        return independent_transformation<value_type, Self, iterator_type, new_meta>(self(), std::forward<Args>(args)...);
     }
 };
 

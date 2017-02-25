@@ -8,7 +8,6 @@ namespace exstream {
 template <typename T,
           typename Source,
           typename TransformIterator,
-          typename Allocator,
           typename Meta,
           typename Self>
 class base_transformation : public with_transformations<T, Self>,
@@ -17,19 +16,12 @@ class base_transformation : public with_transformations<T, Self>,
 public:
 
     using iterator_type = TransformIterator;
-    using allocator = Allocator;
     using meta = Meta;
-
-    const Allocator& get_allocator() const noexcept
-    {
-        return alloc;
-    }
 
 protected:
 
-    explicit base_transformation(const Source& source, const Allocator& alloc) noexcept
-        : source(source),
-          alloc(alloc)
+    explicit base_transformation(const Source& source) noexcept
+        : source(source)
     {
     }
 
@@ -39,26 +31,21 @@ protected:
     base_transformation& operator= (const base_transformation&) = delete;
 
     const Source& source;
-
-private:
-
-    const Allocator& alloc;
 };
 
 template <typename T,
           typename Source,
           typename Function,
           typename TransformIterator,
-          typename Allocator,
           typename Meta>
-class transformation : public base_transformation<T, Source, TransformIterator, Allocator, Meta, transformation<T, Source, Function, TransformIterator, Allocator, Meta>>
+class transformation : public base_transformation<T, Source, TransformIterator, Meta, transformation<T, Source, Function, TransformIterator, Meta>>
 {
     using source_iterator = decltype(std::declval<const Source>().get_iterator());
-    static_assert(std::is_constructible_v<TransformIterator, source_iterator, const Function&, const Allocator&>, "Invalid TransformIterator");
+    static_assert(std::is_constructible_v<TransformIterator, source_iterator, const Function&>, "Invalid TransformIterator");
 public:
 
-    explicit transformation(const Source& source, const Function& function, const Allocator& alloc) noexcept
-        : base_transformation(source, alloc),
+    explicit transformation(const Source& source, const Function& function) noexcept
+        : base_transformation(source),
           function(function)
     {
     }
@@ -71,7 +58,7 @@ public:
     TransformIterator get_iterator() const noexcept(std::is_nothrow_constructible_v<TransformIterator, source_iterator, const Function&> &&
                                                     std::is_nothrow_move_constructible_v<TransformIterator>)
     {
-        return TransformIterator(source.get_iterator(), function, get_allocator());
+        return TransformIterator(source.get_iterator(), function);
     }
 
 private:
@@ -82,14 +69,13 @@ private:
 template <typename T,
           typename Source,
           typename TransformIterator,
-          typename Allocator,
           typename Meta>
-class independent_transformation : public base_transformation<T, Source, TransformIterator, Allocator, Meta, independent_transformation<T, Source, TransformIterator, Allocator, Meta>>
+class independent_transformation : public base_transformation<T, Source, TransformIterator, Meta, independent_transformation<T, Source, TransformIterator, Meta>>
 {
 public:
 
-    explicit independent_transformation(const Source& source, const Allocator& alloc) noexcept
-        : base_transformation(source, alloc)
+    explicit independent_transformation(const Source& source) noexcept
+        : base_transformation(source)
     {
     }
 
@@ -101,7 +87,7 @@ public:
     TransformIterator get_iterator() const noexcept(std::is_nothrow_constructible_v<TransformIterator, const Source&> &&
                                                     std::is_nothrow_move_constructible_v<TransformIterator>)
     {
-        return TransformIterator(source.get_iterator(), get_allocator());
+        return TransformIterator(source.get_iterator());
     }
 };
 

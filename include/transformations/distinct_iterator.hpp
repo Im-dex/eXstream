@@ -18,10 +18,12 @@ namespace exstream {
 // TODO: possibility to provide hash
 template <typename Iterator,
           typename Meta,
-          typename Allocator>
+          template <typename> class Allocator>
 class distinct_iterator final : public transform_iterator<Iterator>
 {
     using traits = result_traits<typename Iterator::result_type>;
+    using storage = typename traits::storage;
+    using allocator = Allocator<storage>;
 public:
 
     using value_type = typename traits::value_type;
@@ -31,7 +33,7 @@ public:
 
     static_assert(std::is_copy_constructible_v<value_type>, "Distinct requires type to be a copy constructible in that case.");
 
-    explicit distinct_iterator(const Iterator& iterator, const Allocator& alloc)
+    explicit distinct_iterator(const Iterator& iterator, const allocator& alloc)
         : transform_iterator(iterator),
           set(alloc),
           elementIter(std::end(set)),
@@ -40,7 +42,7 @@ public:
         init_set();
     }
 
-    explicit distinct_iterator(Iterator&& iterator, const Allocator& alloc)
+    explicit distinct_iterator(Iterator&& iterator, const allocator& alloc)
         : transform_iterator(std::move(iterator)),
           set(alloc),
           elementIter(std::end(set)),
@@ -86,7 +88,6 @@ public:
 
 private:
 
-    using storage = typename traits::storage;
     using set_type = std::unordered_set<storage, std::hash<storage>, std::equal_to<storage>, Allocator>;
     using set_iterator = typename set_type::iterator;
 
